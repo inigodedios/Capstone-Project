@@ -36,7 +36,6 @@ def get_stock_info(symbol):
     response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
     if response.status_code == 200:
         data = response.json()
-        # Extraer y transformar los datos para obtener solo la información de los últimos 5 días hábiles.
         time_series = data.get("Time Series (Daily)", {})
         last_five_days = sorted(time_series.keys(), reverse=True)[:5]
         stock_info = [
