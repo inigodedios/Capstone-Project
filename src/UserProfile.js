@@ -1,40 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 
+/**
+ * UserProfile Component
+ * This component fetches and displays the portfolio details of a user including their stock holdings and individual stock details.
+ * Utilizes useParams hook from react-router-dom to extract the userId parameter from the URL.
+ * Manages state for the user's portfolio, individual stock details, selected stock, and loading states.
+ */
 const UserProfile = () => {
-  const { userId } = useParams();
-  const [portfolio, setPortfolio] = useState(null);
-  const [stockDetails, setStockDetails] = useState({});
-  const [selectedStock, setSelectedStock] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingDetails, setLoadingDetails] = useState(false);
+  const { userId } = useParams(); // For next implementations
+  const [portfolio, setPortfolio] = useState(null); // State for storing user portfolio data
+  const [stockDetails, setStockDetails] = useState({}); // State for storing details of selected stock
+  const [selectedStock, setSelectedStock] = useState(null); // State for tracking the currently selected stock
+  const [loading, setLoading] = useState(true); // State for tracking loading state of the portfolio fetch
+  const [loadingDetails, setLoadingDetails] = useState(false); // State for tracking loading state of the stock details fetch
 
   useEffect(() => {
+    // Fetches the user's portfolio
     const fetchPortfolio = async () => {
-      setLoading(true);
+      setLoading(true); // Start loading
       try {
         const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/user1`);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setPortfolio(data);
+        setPortfolio(data); // Update state with fetched portfolio data
       } catch (error) {
         console.error('Error fetching portfolio data:', error);
       } finally {
-        setLoading(false);
+        setLoading(false); // End loading
       }
     };
 
     fetchPortfolio();
-  }, [userId]);
+  }, []); // Add [userId] as a dependency for fetching user-specific data in future implementations
 
+  /**
+   * Fetches details for a specific stock symbol.
+   * Checks if details are already loaded to avoid unnecessary fetches.
+   * Updates the stockDetails state with the new data or existing data if already fetched.
+   */
   const fetchStockDetails = async (symbol) => {
-    setLoadingDetails(true);
+    setLoadingDetails(true); // Start loading details
     if (stockDetails[symbol]) {
-      setSelectedStock(symbol);
-      setLoadingDetails(false);
+      setSelectedStock(symbol); // Use existing data if available
+      setLoadingDetails(false); // End loading details
     } else {
       try {
         const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/stockinfo/${symbol}`);
@@ -44,13 +55,13 @@ const UserProfile = () => {
         const data = await response.json();
         setStockDetails(prevDetails => ({
           ...prevDetails,
-          [symbol]: data
+          [symbol]: data // Add new stock details to state
         }));
-        setSelectedStock(symbol);
+        setSelectedStock(symbol); // Update selected stock
       } catch (error) {
         console.error(`Error fetching details for ${symbol}:`, error);
       } finally {
-        setLoadingDetails(false);
+        setLoadingDetails(false); // End loading details
       }
     }
   };
