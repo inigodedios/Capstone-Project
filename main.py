@@ -20,7 +20,7 @@ def home():
     # Home route to welcome users
     return "Welcome to DebuggingDollars - Your Stock Tracking Application"
 
-@app.route('/portfolio/<user_id>', methods=['GET'])
+@app.route('/<user_id>', methods=['GET'])
 def get_portfolio(user_id):
     # Retrieve and display the portfolio for a given user ID
     portfolios = user_database()  # Call user_database function to get the portfolios
