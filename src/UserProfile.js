@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 /**
- * UserProfile Component
+ * UserProfile
  * This component fetches and displays the portfolio details of a user including their stock holdings and individual stock details.
  * Utilizes useParams hook from react-router-dom to extract the userId parameter from the URL.
  * Manages state for the user's portfolio, individual stock details, selected stock, and loading states.
