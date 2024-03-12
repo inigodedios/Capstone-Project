@@ -17,6 +17,8 @@ const UserProfile = () => {
   const [stockSymbol, setStockSymbol] = useState('');
   const [stockQuantity, setStockQuantity] = useState(0);
   const [modifyLoading, setModifyLoading] = useState(false);
+  const [quantity, setQuantity] = useState('');
+  const [isAdding, setIsAdding] = useState(true);
 
   useEffect(() => {
     // Fetches the user's portfolio
@@ -37,7 +39,9 @@ const UserProfile = () => {
     };
 
     fetchPortfolio();
-  }, []); // Add [userId] as a dependency for fetching user-specific data in future implementations
+  }, [userId]); // Add [userId] as a dependency for fetching user-specific data in future implementations
+
+  
 
   /**
    * Fetches details for a specific stock symbol.
@@ -68,7 +72,7 @@ const UserProfile = () => {
       }
     }
   };
-
+  
   const handleStockModification = async (e) => {
     e.preventDefault();
     const action = isAdding ? 'add' : 'remove';
@@ -154,12 +158,66 @@ const UserProfile = () => {
 
   return (
     <>
-      <div className="portfolio-container" style={{ margin: '20px' }}> 
-        {loading ? (
-          <p>Loading...</p>
-        ) : portfolio ? (
-          <>
-            <p className="text-lg mb-6">Total Portfolio Value: ${portfolio.total_value.toFixed(2)}</p>
+    <div className="portfolio-container" style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>
+      {loading ? (
+        <p>Loading...</p>
+      ) : portfolio ? (
+        <>
+          <h1>DEBUGGING DOLLARS</h1>
+          <h2>PORTFOLIO OVERVIEW</h2>
+          <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
+          <div className="modify-portfolio-section" style={{ marginBottom: '10px', backgroundColor: '#f2f2f2', padding: '5px' }}>
+            <h3>Do you want to modify your portfolio?</h3>
+            <form onSubmit={handleStockModification} style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
+                <label htmlFor="stockSymbol" style={{ marginBottom: '5px' }}>Stock symbol</label>
+                <input
+                  id="stockSymbol"
+                  value={stockSymbol}
+                  onChange={(e) => setStockSymbol(e.target.value)}
+                  required
+                  style={{ padding: '5px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
+                <label htmlFor="quantity" style={{ marginBottom: '5px' }}>Quantity</label>
+                <input
+                  id="quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                  style={{ padding: '5px' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
+              <span>What do you want to do?</span>
+                <label style={{ marginBottom: '5px' }}>
+                  <input
+                    type="radio"
+                    name="action"
+                    value="add"
+                    checked={isAdding}
+                    onChange={() => setIsAdding(true)}
+                  />
+                  Add
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="action"
+                    value="remove"
+                    checked={!isAdding}
+                    onChange={() => setIsAdding(false)}
+                  />
+                  Remove
+                </label>
+              </div>
+              <button type="submit" style={{ padding: '20px', fontSize: '19px', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                MODIFY PORTFOLIO
+              </button>
+            </form>
+          </div>
             <div>
               {Object.entries(portfolio.symbols).map(([symbol, details]) => (
                 <div
@@ -171,7 +229,6 @@ const UserProfile = () => {
                     alignItems: 'center',
                     padding: '16px',
                     backgroundColor: 'white',
-                    // boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
                     marginBottom: '16px',
                     border: '1px solid black',
                     cursor: 'pointer',
@@ -179,39 +236,39 @@ const UserProfile = () => {
                   onClick={() => fetchStockDetails(symbol)}
                 >
                   <span className="font-medium text-lg">{symbol}</span>
-                  <span style={{ marginLeft: '3em' }}>{details.quantity} stocks</span>
+                  <span style={{ marginLeft: 'auto' }}>{details.quantity} stocks</span>
                 </div>
               ))}
             </div>
             {selectedStock && stockDetails[selectedStock] && (
               <div className="stock-details" style={{ marginTop: '32px' }}>
-                <h3 className="text-xl font-bold mb-4">Stock Details for {selectedStock}</h3>
-                {loadingDetails ? (
-                  <p>Loading details...</p>
-                ) : (
-                  <table className="details-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        {['Date', 'Open', 'High', 'Low', 'Close', 'Volume'].map((header) => (
-                          <th key={header} style={{ border: '1px solid black', padding: '8px', textAlign: 'left', backgroundColor: 'white', color: 'black' }}>{header}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockDetails[selectedStock].map(([date, data], index) => (
-                        <tr key={index} style={{ backgroundColor:'white'}}>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{date}</td>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{data['1. open']}</td>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{data['2. high']}</td>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{data['3. low']}</td>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{data['4. close']}</td>
-                          <td style={{ border: '1px solid black', padding: '8px' }}>{data['5. volume']}</td>
-                        </tr>
+              <h3 className="text-xl font-bold mb-4">Stock Details for {selectedStock}</h3>
+              {loadingDetails ? (
+                <p>Loading details...</p>
+              ) : (
+                <table className="details-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['Date', 'Open', 'High', 'Low', 'Close', 'Volume'].map((header) => (
+                        <th key={header} style={{ border: '1px solid black', padding: '8px', textAlign: 'left', backgroundColor: 'white', color: 'black' }}>{header}</th>
                       ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockDetails[selectedStock].map(([date, data], index) => (
+                      <tr key={index} style={{ backgroundColor:'white'}}>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{date}</td>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['1. open']}</td>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['2. high']}</td>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['3. low']}</td>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['4. close']}</td>
+                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['5. volume']}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
             )}
           </>
         ) : (
@@ -220,6 +277,5 @@ const UserProfile = () => {
       </div>
     </>
   );
-};
-
+        };  
 export default UserProfile;
