@@ -14,6 +14,9 @@ const UserProfile = () => {
   const [selectedStock, setSelectedStock] = useState(null); // State for tracking the currently selected stock
   const [loading, setLoading] = useState(true); // State for tracking loading state of the portfolio fetch
   const [loadingDetails, setLoadingDetails] = useState(false); // State for tracking loading state of the stock details fetch
+  const [stockSymbol, setStockSymbol] = useState('');
+  const [stockQuantity, setStockQuantity] = useState(0);
+  const [modifyLoading, setModifyLoading] = useState(false);
 
   useEffect(() => {
     // Fetches the user's portfolio
@@ -63,6 +66,89 @@ const UserProfile = () => {
       } finally {
         setLoadingDetails(false); // End loading details
       }
+    }
+  };
+
+  const handleStockModification = async (e) => {
+    e.preventDefault();
+    const action = isAdding ? 'add' : 'remove';
+    try {
+      const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          symbol: stockSymbol.toUpperCase(),
+          quantity: Number(quantity),
+          action: action,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const updatedPortfolio = await response.json();
+      setPortfolio(updatedPortfolio);
+      setStockSymbol('');
+      setQuantity('');
+    } catch (error) {
+      console.error('Error modifying portfolio:', error);
+    }
+  };
+  
+  // Function to add a stock to the user's portfolio
+  const addStock = async () => {
+    setModifyLoading(true);
+    try {
+      const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'add',
+          symbol: stockSymbol,
+          quantity: stockQuantity,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setPortfolio(data); // Update the portfolio with the new data
+      } else {
+        throw new Error(data.error || 'Error adding stock');
+      }
+    } catch (error) {
+      console.error('Error adding stock:', error);
+    } finally {
+      setModifyLoading(false);
+    }
+  };
+
+  // Function to remove a stock from the user's portfolio
+  const removeStock = async () => {
+    setModifyLoading(true);
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/modify_portfolio/${userId}`, { // https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'remove',
+          symbol: stockSymbol,
+          quantity: stockQuantity,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setPortfolio(data); // Update the portfolio with the new data
+      } else {
+        throw new Error(data.error || 'Error removing stock');
+      }
+    } catch (error) {
+      console.error('Error removing stock:', error);
+    } finally {
+      setModifyLoading(false);
     }
   };
 

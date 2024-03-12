@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request
 import requests
 from flask_cors import CORS
-from models import db, WatchedEpisode
 from sqlalchemy.pool import NullPool
-import oracledb
+import cx_Oracle as oracledb
+from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 CORS(app) # Enable Cross-Origin Resource Sharing for the Flask app
@@ -28,19 +28,9 @@ dsn = '''
 )
 '''
 
-pool = oracledb.create_pool(user=un, password=pw, dsn=dsn)
+engine = create_engine(f'oracle+cx_oracle://{un}:{pw}@{dsn}', poolclass=NullPool)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'oracle+oracledb://'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'creator': pool.acquire,
-    'poolclass': NullPool
-}
-app.config['SQLALCHEMY_ECHO'] = True
-db.init_app(app)
 
-with app.app_context():
-    db.create_all()
 
 # Holds mock user portfolio data for demonstration purposes.
 # In a production environment, this would be dynamically retrieved from a database.
@@ -151,6 +141,114 @@ def get_stock_info(symbol):
         return jsonify(stock_info)
     else:
         return jsonify({"error": "Failed to retrieve stock information"}), response.status_code
+    
+
+@app.route('/modify_portfolio/<user_id>', methods=['POST'])
+def modify_portfolio(user_id):
+    data = request.json
+    action = data.get('action')
+    symbol = data.get('symbol').upper()
+    quantity = int(data.get('quantity'))
+
+    if action not in ['add', 'remove']:
+        return jsonify({"error": "Invalid action specified"}), 400
+    
+    try:
+        conn = oracledb.connect(user=un, password=pw, dsn=dsn)
+        cursor = conn.cursor()
+
+        # Check if the stock already exists for the user
+        cursor.execute("""
+            SELECT QUANTITY 
+            FROM USER_STOCKS 
+            WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
+        """, user_id=user_id, symbol=symbol)
+        row = cursor.fetchone()
+
+        if action == 'add':
+            if row:
+                new_quantity = row[0] + quantity
+                cursor.execute("""
+                    UPDATE USER_STOCKS 
+                    SET QUANTITY = :quantity 
+                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
+                """, quantity=new_quantity, user_id=user_id, symbol=symbol)
+            else:
+                cursor.execute("""
+                    INSERT INTO USER_STOCKS (USERID, STOCKSYMBOL, QUANTITY) 
+                    VALUES (:user_id, :symbol, :quantity)
+                """, user_id=user_id, symbol=symbol, quantity=quantity)
+
+        elif action == 'remove':
+            if row and row[0] > quantity:
+                new_quantity = row[0] - quantity
+                cursor.execute("""
+                    UPDATE USER_STOCKS 
+                    SET QUANTITY = :quantity 
+                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
+                """, quantity=new_quantity, user_id=user_id, symbol=symbol)
+            elif row:
+                cursor.execute("""
+                    DELETE FROM USER_STOCKS 
+                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
+                """, user_id=user_id, symbol=symbol)
+
+        # Commit the changes
+        conn.commit()
+
+        # Now fetch the updated portfolio to return to the frontend
+        cursor.execute("""
+            SELECT STOCKSYMBOL, QUANTITY 
+            FROM USER_STOCKS 
+            WHERE USERID = :user_id
+        """, user_id=user_id)
+        portfolio = cursor.fetchall()
+        
+        # Initialize total value of the portfolio
+        total_value = 0
+        portfolio_with_values = {}
+
+        # Fetch the current stock prices and calculate total value
+        for symbol, quantity in portfolio:
+            params = {
+                "function": "GLOBAL_QUOTE",
+                "symbol": symbol,
+                "apikey": ALPHA_VANTAGE_API_KEY
+            }
+            response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                price = float(data["Global Quote"]["05. price"])
+                value = quantity * price
+                rounded_value = round(value, 2)
+                total_value += rounded_value
+                portfolio_with_values[symbol] = {
+                    "quantity": quantity,
+                    "value": rounded_value
+                }
+            else:
+                conn.close()
+                return jsonify({"error": f"Failed to retrieve stock information for {symbol}"}), response.status_code
+        
+        # Round total value to 2 decimal places
+        rounded_total_value = round(total_value, 2)
+
+        # Close the connection
+        conn.close()
+
+        return jsonify({
+            "total_value": rounded_total_value,
+            "symbols": portfolio_with_values
+        }), 200
+
+    except oracledb.Error as e:
+        # Rollback in case of error
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)  # Enable debug mode for development
