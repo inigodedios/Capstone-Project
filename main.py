@@ -1,9 +1,46 @@
 from flask import Flask, jsonify, request
 import requests
 from flask_cors import CORS
+from models import db, WatchedEpisode
+from sqlalchemy.pool import NullPool
+import oracledb
 
 app = Flask(__name__)
 CORS(app) # Enable Cross-Origin Resource Sharing for the Flask app
+
+un = 'ADMIN'
+pw = 'mArfaq-pirruh-qokhe4'
+dsn = '''
+(description= 
+  (retry_count=20)
+  (retry_delay=3)
+  (address=
+    (protocol=tcps)
+    (port=1521)
+    (host=adb.eu-madrid-1.oraclecloud.com)
+  )
+  (connect_data=
+    (service_name=ga981702cb90572_dbcaps_high.adb.oraclecloud.com)
+  )
+  (security=
+    (ssl_server_dn_match=yes)
+  )
+)
+'''
+
+pool = oracledb.create_pool(user=un, password=pw, dsn=dsn)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'oracle+oracledb://'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'creator': pool.acquire,
+    'poolclass': NullPool
+}
+app.config['SQLALCHEMY_ECHO'] = True
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 # Holds mock user portfolio data for demonstration purposes.
 # In a production environment, this would be dynamically retrieved from a database.
