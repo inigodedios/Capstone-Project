@@ -176,11 +176,11 @@ def get_stock_info(symbol):
 def modify_portfolio():
     user_id = 1  # Assuming user_id is static for demonstration
     data = request.json
-    action = data.get('action', '').lower()
-    symbol = data.get('symbol', '').upper()
+    symbol = data.get('stock_symbol', '').upper()
     quantity = int(data.get('quantity', 0))
+    operation = data.get('operation', '').upper()
 
-    if action not in ['add', 'remove']:
+    if operation not in ['ADD', 'REMOVE']:
         return jsonify({"error": "Invalid action specified"}), 400
 
     try:
@@ -194,7 +194,7 @@ def modify_portfolio():
         """, [user_id, symbol])
         row = cursor.fetchone()
 
-        if action == 'add':
+        if operation == 'ADD':
             if row:
                 new_quantity = row[0] + quantity
                 cursor.execute("""
@@ -208,7 +208,7 @@ def modify_portfolio():
                     VALUES (:1, :2, :3)
                 """, [user_id, symbol, quantity])
 
-        elif action == 'remove':
+        elif operation == 'REMOVE':
             if row and row[0] >= quantity:
                 new_quantity = row[0] - quantity
                 if new_quantity > 0:
