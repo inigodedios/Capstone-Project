@@ -26,21 +26,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-def user_database():
-    return {
-        "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
-    }
-
-
-
 ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
-
-
-def user_database():
-    return {
-        "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
-    }
 
 
 def fetch_current_stock_price(symbol):
@@ -182,10 +169,27 @@ def modify_portfolio():
 
     if operation not in ['ADD', 'REMOVE']:
         return jsonify({"error": "Invalid action specified"}), 400
+    
+    current_price = fetch_current_stock_price(symbol)
+    if current_price is None:
+        return jsonify({"error": "Invalid stock symbol"}), 400
 
     try:
         conn = pool.acquire()
         cursor = conn.cursor()
+
+        # Verificar si el stock existe en el portfolio
+        cursor.execute("""
+            SELECT QUANTITY FROM USER_STOCKS WHERE USERID = :1 AND STOCKSYMBOL = :2
+        """, [user_id, symbol])
+        row = cursor.fetchone()
+
+        if operation == 'REMOVE':
+            if not row:
+                return jsonify({"error": "Stock not found in portfolio"}), 400
+            if row[0] < quantity:
+                return jsonify({"error": "Requested quantity exceeds stocks in portfolio"}), 400
+
 
         cursor.execute("""
             SELECT QUANTITY 

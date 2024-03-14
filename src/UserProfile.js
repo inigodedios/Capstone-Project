@@ -81,38 +81,42 @@ const UserProfile = () => {
   
   const handleStockModification = async (e) => {
     e.preventDefault();
+    setModifyLoading(true); // Indica que la modificación está en proceso
     try {
-      const response = await fetch(`http://127.0.0.1:5000/modifyPortfolio/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          stock_symbol: stockSymbol.toUpperCase(),
-          quantity: Number(quantity),
-          operation: isAdding ? "ADD" : "REMOVE",
-      }),      
-      });
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const response = await fetch(`http://127.0.0.1:5000/modifyPortfolio/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                stock_symbol: stockSymbol.toUpperCase(),
+                quantity: Number(quantity),
+                operation: isAdding ? "ADD" : "REMOVE",
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "An unexpected error occurred. Please try again.");
       }
-      const data = await response.json();
-      // Asegúrate de que la respuesta se procese de la misma manera que la respuesta de /overview
-      const formattedData = {
-        total_value: data[0].total_value,
-        stocks: data.slice(1).map(stock => {
-          const [symbol, details] = Object.entries(stock)[0];
-          return { symbol, ...details };
-        })
-      };
-      setPortfolio(formattedData);
-      setStockSymbol('');
-      setQuantity('');
+
+        // Asumiendo que la respuesta es exitosa y contiene la data actualizada
+        const formattedData = {
+            total_value: data[0].total_value,
+            stocks: data.slice(1).map(stock => {
+                const [symbol, details] = Object.entries(stock)[0];
+                return { symbol, ...details };
+            })
+        };
+        setPortfolio(formattedData);
     } catch (error) {
-      console.error('Error modifying portfolio:', error);
+        alert(error.message); // Usa el mensaje de error proporcionado por el backend
+    } finally {
+        setModifyLoading(false); // Resetea el estado de carga
+        setStockSymbol('');
+        setQuantity('');
     }
-  };
-  
+};
+
   
   return (
     <>
