@@ -8,32 +8,34 @@ import { useParams } from 'react-router-dom';
  * Manages state for the user's portfolio, individual stock details, selected stock, and loading states.
  */
 const UserProfile = () => {
-  const { userId } = useParams(); // For next implementations
   const [stockDetails, setStockDetails] = useState({}); // State for storing details of selected stock
   const [selectedStock, setSelectedStock] = useState(null); // State for tracking the currently selected stock
   const [loading, setLoading] = useState(true); // State for tracking loading state of the portfolio fetch
   const [loadingDetails, setLoadingDetails] = useState(false); // State for tracking loading state of the stock details fetch
-  const [stockSymbol, setStockSymbol] = useState('');
-  const [stockQuantity, setStockQuantity] = useState(0);
-  const [modifyLoading, setModifyLoading] = useState(false);
-  const [quantity, setQuantity] = useState('');
-  const [isAdding, setIsAdding] = useState(true);
-  const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
+  const [stockSymbol, setStockSymbol] = useState(''); // State for tracking the stock symbol input
+  const [quantity, setQuantity] = useState(''); // State for tracking the quantity input
+  const [isAdding, setIsAdding] = useState(true); // State for tracking the action (add/remove) input
+  const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] }); // State for storing the user's portfolio data
 
-  // Ajustar useEffect para /overview
   useEffect(() => {
+
+    /**
+     * Fetches the user's portfolio data from the backend API when the component mounts.
+     * Updates the portfolio state with the fetched data.
+     * Sets loading state to indicate data fetching is in progress.
+     */
     const fetchPortfolio = async () => {
-      setLoading(true);
+      setLoading(true); // Start loading
       try {
-        const response = await fetch(`http://127.0.0.1:5000/overview`);
+        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/overview`);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
         const formattedData = {
-          total_value: data[0].total_value,
-          stocks: data.slice(1).map(stock => {
-            const [symbol, details] = Object.entries(stock)[0];
+          total_value: data[0].total_value, // Extract total portfolio value from first item in response
+          stocks: data.slice(1).map(stock => { // Extract stock details from the rest of the items in response
+            const [symbol, details] = Object.entries(stock)[0]; //
             return { symbol, ...details };
           })
         };
@@ -48,11 +50,11 @@ const UserProfile = () => {
     fetchPortfolio();
   }, []);
   
-
   /**
    * Fetches details for a specific stock symbol.
    * Checks if details are already loaded to avoid unnecessary fetches.
    * Updates the stockDetails state with the new data or existing data if already fetched.
+   * @param {string} symbol - The symbol of the stock to fetch details for.
    */
   const fetchStockDetails = async (symbol) => {
     setLoadingDetails(true); // Start loading details
@@ -61,7 +63,7 @@ const UserProfile = () => {
       setLoadingDetails(false); // End loading details
     } else {
       try {
-        const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/stockinfo/${symbol}`);
+        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/stockinfo/${symbol}`);
         if (!response.ok) {
           throw new Error(`Network response was not ok for symbol: ${symbol}`);
         }
@@ -79,11 +81,18 @@ const UserProfile = () => {
     }
   };
   
+    /**
+   * Handles the modification of the user's stock portfolio.
+   * Sends a request to the backend API to add or remove stocks from the portfolio.
+   * Displays an alert with error message if the request fails.
+   * Clears input fields and resets loading state after completion.
+   * @param {object} e - The event object representing the form submission.
+   */
   const handleStockModification = async (e) => {
-    e.preventDefault();
-    setModifyLoading(true); // Indica que la modificación está en proceso
+    e.preventDefault(); // Prevents default form submission behavior
+    setModifyLoading(true); // Sets loading state to indicate modification is in progress
     try {
-        const response = await fetch(`http://127.0.0.1:5000/modifyPortfolio/`, {
+        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/modifyPortfolio/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -92,14 +101,10 @@ const UserProfile = () => {
                 operation: isAdding ? "ADD" : "REMOVE",
             }),
         });
-
         const data = await response.json();
-
         if (!response.ok) {
           throw new Error(data.error || "An unexpected error occurred. Please try again.");
       }
-
-        // Asumiendo que la respuesta es exitosa y contiene la data actualizada
         const formattedData = {
             total_value: data[0].total_value,
             stocks: data.slice(1).map(stock => {
@@ -109,15 +114,14 @@ const UserProfile = () => {
         };
         setPortfolio(formattedData);
     } catch (error) {
-        alert(error.message); // Usa el mensaje de error proporcionado por el backend
+        alert(error.message); // Display alert with error message
     } finally {
-        setModifyLoading(false); // Resetea el estado de carga
+        setModifyLoading(false); 
         setStockSymbol('');
         setQuantity('');
     }
 };
 
-  
   return (
     <>
     <div className="portfolio-container" style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>

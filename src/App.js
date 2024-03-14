@@ -1,27 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React from "react";
 import UserProfile from "./UserProfile";
-import Login from "./login";
+// Removed import for Login component as it's no longer directly utilized.
 
 /**
- * App Component
- * This component sets up the main router for the application using React Router.
- * It defines a single route that matches a user ID pattern and renders the UserProfile component for that user.
+ *
+ * This component serves as the root of the application. In this simplified version,
+ * it directly renders the UserProfile component. This approach is taken to streamline
+ * the display process, focusing on showcasing the user profile information immediately
+ * upon app launch.
  * 
- * The Router component wraps the entire application to enable client-side routing.
- * The Routes component is a container for all individual Route components, allowing for multiple routes to be defined.
- * Each Route component specifies a path and the component to render when that path is accessed.
+ * Note: The previous version of this app included routing to different components (e.g., Login, UserProfile).
+ * However, based on the current requirements of Google App Engine (static files), we've simplified the structure to directly load the user's profile,
+ * eliminating the need for explicit routing.
  */
 function App() {
-  return (
-    <Router>
-      <Routes>
-        {/* Define a route for user profiles with a dynamic user ID. This will be implemented along with GCP in future deliveries.*/}
-        <Route path="/overview" element={<UserProfile />} />
-        <Route path="/login" element={<Login />} />
-        {/* The ":userId" placeholder in the path indicates a dynamic segment that matches any user ID. */}
-      </Routes>
-    </Router>
-  );
+  // Render UserProfile directly to display user's portfolio and other details.
+  return <UserProfile />;
 }
 
 export default App;

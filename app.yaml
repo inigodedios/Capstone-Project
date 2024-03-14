@@ -1,2 +1,7 @@
 runtime: python39
-entrypoint: gunicorn -b :$PORT main:app
+sfirebase initentrypoint: gunicorn -b :$PORT main:app -w 8 -t 240 --threads 4
+
+instance_class: B8
+
+manual_scaling:
+  instances: 5  # Número específico de instancias que quieres ejecutar.
