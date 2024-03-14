@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import UserProfile from "./UserProfile";
+import Login from "./login";
 
 /**
  * App Component
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         {/* Define a route for user profiles with a dynamic user ID. This will be implemented along with GCP in future deliveries.*/}
         <Route path="/:userId" element={<UserProfile />} />
+        <Route path="/login" element={<Login />} />
         {/* The ":userId" placeholder in the path indicates a dynamic segment that matches any user ID. */}
       </Routes>
     </Router>

@@ -2,44 +2,35 @@ from flask import Flask, jsonify, request
 import requests
 from flask_cors import CORS
 from sqlalchemy.pool import NullPool
-import cx_Oracle as oracledb
+import oracledb
 from sqlalchemy import create_engine, text
+from models import db, User, UserStock
 
 app = Flask(__name__)
 CORS(app) # Enable Cross-Origin Resource Sharing for the Flask app
+app.config['SECRET_KEY'] = 'una_clave_secreta_muy_segura'
 
 un = 'ADMIN'
-pw = 'mArfaq-pirruh-qokhe4'
-dsn = '''
-(description= 
-  (retry_count=20)
-  (retry_delay=3)
-  (address=
-    (protocol=tcps)
-    (port=1521)
-    (host=adb.eu-madrid-1.oraclecloud.com)
-  )
-  (connect_data=
-    (service_name=ga981702cb90572_dbcaps_high.adb.oraclecloud.com)
-  )
-  (security=
-    (ssl_server_dn_match=yes)
-  )
-)
-'''
+pw = 'tescYb-rojjaq-rismy6'
+dsn ="(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-madrid-1.oraclecloud.com))(connect_data=(service_name=ga981702cb90572_dbcaps_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
+pool = oracledb.create_pool(user=un, password=pw,
+                            dsn=dsn)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'oracle+oracledb://'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'creator': pool.acquire,
+    'poolclass': NullPool
+}
+app.config['SQLALCHEMY_ECHO'] = True
+db.init_app(app)
+with app.app_context():
+    db.create_all()
 
-engine = create_engine(f'oracle+cx_oracle://{un}:{pw}@{dsn}', poolclass=NullPool)
-
-
-
-# Holds mock user portfolio data for demonstration purposes.
-# In a production environment, this would be dynamically retrieved from a database.
 def user_database():
     return {
         "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
     }
 
-# Alpha Vantage API details
 ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 
@@ -50,6 +41,26 @@ def home():
     Returns a welcoming string to the user, indicating the service's purpose.
     """
     return "Welcome to DebuggingDollars - Your Stock Tracking Application"
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    user = User.query.filter_by(USERNAME=username, PASSWORD=password).first()
+    
+    return jsonify({"message": "Login successful"}), 200
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    return jsonify({"message": "Logout successful"}), 200
+
+def user_database():
+    return {
+        "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
+    }
 
 @app.route('/<user_id>', methods=['GET'])
 def get_portfolio(user_id):
