@@ -16,7 +16,7 @@ function App() {
     <Router>
       <Routes>
         {/* Define a route for user profiles with a dynamic user ID. This will be implemented along with GCP in future deliveries.*/}
-        <Route path="/:userId" element={<UserProfile />} />
+        <Route path="/overview" element={<UserProfile />} />
         <Route path="/login" element={<Login />} />
         {/* The ":userId" placeholder in the path indicates a dynamic segment that matches any user ID. */}
       </Routes>

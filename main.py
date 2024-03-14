@@ -12,7 +12,7 @@ app.config['SECRET_KEY'] = 'una_clave_secreta_muy_segura'
 
 un = 'ADMIN'
 pw = 'tescYb-rojjaq-rismy6'
-dsn ="(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-madrid-1.oraclecloud.com))(connect_data=(service_name=ga981702cb90572_dbcaps_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
+dsn ="(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-madrid-1.oraclecloud.com))(connect_data=(service_name=ga981702cb90572_dbcaps_low.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
 pool = oracledb.create_pool(user=un, password=pw,
                             dsn=dsn)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'oracle+oracledb://'
@@ -31,8 +31,31 @@ def user_database():
         "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
     }
 
+
+
 ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+
+
+def user_database():
+    return {
+        "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
+    }
+
+
+def fetch_current_stock_price(symbol):
+    """Fetches the current stock price for a given symbol from the Alpha Vantage API."""
+    params = {
+        "function": "GLOBAL_QUOTE",
+        "symbol": symbol,
+        "apikey": ALPHA_VANTAGE_API_KEY
+    }
+    response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
+    if response.status_code == 200 and "Global Quote" in response.json() and "05. price" in response.json()["Global Quote"]:
+        return float(response.json()["Global Quote"]["05. price"])
+    else:
+        return None
+
 
 @app.route('/')
 def home():
@@ -57,59 +80,53 @@ def login():
 def logout():
     return jsonify({"message": "Logout successful"}), 200
 
-def user_database():
-    return {
-        "user1": {"AAPL": 10, "GOOGL": 5, "AMZN": 3},
-    }
+@app.route('/overview', methods=['GET'])
+def get_portfolio():
+    user_id = 1  # Reemplazar con lógica de identificación del usuario según sea necesario
 
-@app.route('/<user_id>', methods=['GET'])
-def get_portfolio(user_id):
-    """Fetches and returns the portfolio for a specified user ID.
-    
-    Retrieves the user's portfolio from a mock database and calculates the current total value
-    by fetching real-time stock prices from the Alpha Vantage API. If the user is not found,
-    returns an error message with a 404 status code.
+    response_data = []  # Inicia con una lista vacía
+    total_value = 0  # Para calcular el valor total de la cartera
 
-    Args:
-        user_id: The ID of the user whose portfolio is being requested.
-    
-    Returns:
-        A JSON object with the total portfolio value and the value of individual stocks.
-    """
-    portfolios = user_database()  # Retrieve mock user database
-    portfolio = portfolios.get(user_id)
-    if portfolio is None:
-        return jsonify({"error": "User not found"}), 404
-
-    portfolio_with_values = {}
-    total_value = 0  # Initialize total value of the portfolio
-
-    # Iterate through each stock in the user's portfolio to fetch its current price
-    for symbol, quantity in portfolio.items():
-        params = {
-            "function": "GLOBAL_QUOTE",
-            "symbol": symbol,
-            "apikey": ALPHA_VANTAGE_API_KEY
-        }
-        response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            price = float(data["Global Quote"]["05. price"])
-            value = quantity * price # Calculate the value of holdings in that stock
-            rounded_value = round(value, 2) # Round to 2 decimal places for currency formatting
-            total_value += rounded_value
-            portfolio_with_values[symbol] = {
-                "quantity": quantity,
-                "value": rounded_value
+    try:
+        conn = pool.acquire()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT STOCKSYMBOL, QUANTITY
+            FROM USER_STOCKS
+            WHERE USERID = :1
+        """, [user_id])
+        
+        rows = cursor.fetchall()  # Asegúrate de obtener todos los resultados
+        for row in rows:
+            symbol, quantity = row
+            params = {
+                "function": "GLOBAL_QUOTE",
+                "symbol": symbol,
+                "apikey": ALPHA_VANTAGE_API_KEY
             }
-        else:
-            return jsonify({"error": f"Failed to retrieve stock information for {symbol}"}), response.status_code
+            response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
+            data = response.json()
+            if "Global Quote" in data and "05. price" in data["Global Quote"]:
+                price = float(data["Global Quote"]["05. price"])
+                value = quantity * price
+                total_value += value
+                response_data.append({symbol: {"quantity": quantity, "value": round(value, 2)}})
+            else:
+                # Manejo de errores si la respuesta de la API no es la esperada
+                raise ValueError(f"Failed to retrieve data for {symbol}")
 
-    rounded_total_value = round(total_value, 2) # Round to 2 decimal places for currency formatting
-    return jsonify({
-        "total_value": rounded_total_value,
-        "symbols": portfolio_with_values
-    })
+        # Agregar el valor total al principio de la lista de datos de respuesta
+        response_data.insert(0, {"total_value": round(total_value, 2)})
+        return jsonify(response_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            pool.release(conn)
+
+
+
 
 @app.route('/stockinfo/<symbol>', methods=['GET'])
 def get_stock_info(symbol):
@@ -154,26 +171,27 @@ def get_stock_info(symbol):
         return jsonify({"error": "Failed to retrieve stock information"}), response.status_code
     
 
-@app.route('/modify_portfolio/<user_id>', methods=['POST'])
-def modify_portfolio(user_id):
+
+@app.route('/modifyPortfolio/', methods=['POST'])
+def modify_portfolio():
+    user_id = 1  # Assuming user_id is static for demonstration
     data = request.json
-    action = data.get('action')
-    symbol = data.get('symbol').upper()
-    quantity = int(data.get('quantity'))
+    action = data.get('action', '').lower()
+    symbol = data.get('symbol', '').upper()
+    quantity = int(data.get('quantity', 0))
 
     if action not in ['add', 'remove']:
         return jsonify({"error": "Invalid action specified"}), 400
-    
+
     try:
-        conn = oracledb.connect(user=un, password=pw, dsn=dsn)
+        conn = pool.acquire()
         cursor = conn.cursor()
 
-        # Check if the stock already exists for the user
         cursor.execute("""
             SELECT QUANTITY 
             FROM USER_STOCKS 
-            WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
-        """, user_id=user_id, symbol=symbol)
+            WHERE USERID = :1 AND STOCKSYMBOL = :2
+        """, [user_id, symbol])
         row = cursor.fetchone()
 
         if action == 'add':
@@ -181,85 +199,70 @@ def modify_portfolio(user_id):
                 new_quantity = row[0] + quantity
                 cursor.execute("""
                     UPDATE USER_STOCKS 
-                    SET QUANTITY = :quantity 
-                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
-                """, quantity=new_quantity, user_id=user_id, symbol=symbol)
+                    SET QUANTITY = :1 
+                    WHERE USERID = :2 AND STOCKSYMBOL = :3
+                """, [new_quantity, user_id, symbol])
             else:
                 cursor.execute("""
                     INSERT INTO USER_STOCKS (USERID, STOCKSYMBOL, QUANTITY) 
-                    VALUES (:user_id, :symbol, :quantity)
-                """, user_id=user_id, symbol=symbol, quantity=quantity)
+                    VALUES (:1, :2, :3)
+                """, [user_id, symbol, quantity])
 
         elif action == 'remove':
-            if row and row[0] > quantity:
+            if row and row[0] >= quantity:
                 new_quantity = row[0] - quantity
-                cursor.execute("""
-                    UPDATE USER_STOCKS 
-                    SET QUANTITY = :quantity 
-                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
-                """, quantity=new_quantity, user_id=user_id, symbol=symbol)
-            elif row:
-                cursor.execute("""
-                    DELETE FROM USER_STOCKS 
-                    WHERE USERID = :user_id AND STOCKSYMBOL = :symbol
-                """, user_id=user_id, symbol=symbol)
+                if new_quantity > 0:
+                    cursor.execute("""
+                        UPDATE USER_STOCKS 
+                        SET QUANTITY = :1 
+                        WHERE USERID = :2 AND STOCKSYMBOL = :3
+                    """, [new_quantity, user_id, symbol])
+                else:
+                    cursor.execute("""
+                        DELETE FROM USER_STOCKS 
+                        WHERE USERID = :1 AND STOCKSYMBOL = :2
+                    """, [user_id, symbol])
+            else:
+                return jsonify({"error": "Not enough stock to remove or stock not found in portfolio"}), 400
 
-        # Commit the changes
         conn.commit()
 
-        # Now fetch the updated portfolio to return to the frontend
+        # Fetch and return the updated portfolio overview
         cursor.execute("""
-            SELECT STOCKSYMBOL, QUANTITY 
-            FROM USER_STOCKS 
-            WHERE USERID = :user_id
-        """, user_id=user_id)
-        portfolio = cursor.fetchall()
-        
-        # Initialize total value of the portfolio
-        total_value = 0
-        portfolio_with_values = {}
+            SELECT STOCKSYMBOL, QUANTITY
+            FROM USER_STOCKS
+            WHERE USERID = :1
+        """, [user_id])
+        updated_portfolio = cursor.fetchall()
 
-        # Fetch the current stock prices and calculate total value
-        for symbol, quantity in portfolio:
+        # Calculate total value and prepare response data
+        total_value = 0
+        response_data = [{"total_value": 0}]
+        for symbol, quantity in updated_portfolio:
             params = {
                 "function": "GLOBAL_QUOTE",
                 "symbol": symbol,
                 "apikey": ALPHA_VANTAGE_API_KEY
             }
             response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
-            if response.status_code == 200:
-                data = response.json()
-                price = float(data["Global Quote"]["05. price"])
-                value = quantity * price
-                rounded_value = round(value, 2)
-                total_value += rounded_value
-                portfolio_with_values[symbol] = {
-                    "quantity": quantity,
-                    "value": rounded_value
-                }
-            else:
-                conn.close()
-                return jsonify({"error": f"Failed to retrieve stock information for {symbol}"}), response.status_code
-        
-        # Round total value to 2 decimal places
-        rounded_total_value = round(total_value, 2)
+            data = response.json()
+            price = float(data["Global Quote"]["05. price"])
+            value = quantity * price
+            rounded_value = round(value, 2)
+            total_value += rounded_value
+            response_data.append({symbol: {"quantity": quantity, "value": rounded_value}})
 
-        # Close the connection
-        conn.close()
+        response_data[0]["total_value"] = round(total_value, 2)
 
-        return jsonify({
-            "total_value": rounded_total_value,
-            "symbols": portfolio_with_values
-        }), 200
-
-    except oracledb.Error as e:
-        # Rollback in case of error
+        return jsonify(response_data)
+    except Exception as e:
         if conn:
             conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
-            conn.close()
+            pool.release(conn)
+
 
 if __name__ == '__main__':
     app.run(debug=True)  # Enable debug mode for development

@@ -9,7 +9,6 @@ import { useParams } from 'react-router-dom';
  */
 const UserProfile = () => {
   const { userId } = useParams(); // For next implementations
-  const [portfolio, setPortfolio] = useState(null); // State for storing user portfolio data
   const [stockDetails, setStockDetails] = useState({}); // State for storing details of selected stock
   const [selectedStock, setSelectedStock] = useState(null); // State for tracking the currently selected stock
   const [loading, setLoading] = useState(true); // State for tracking loading state of the portfolio fetch
@@ -19,28 +18,35 @@ const UserProfile = () => {
   const [modifyLoading, setModifyLoading] = useState(false);
   const [quantity, setQuantity] = useState('');
   const [isAdding, setIsAdding] = useState(true);
+  const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
 
+  // Ajustar useEffect para /overview
   useEffect(() => {
-    // Fetches the user's portfolio
     const fetchPortfolio = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
-        const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/user1`);
+        const response = await fetch(`http://127.0.0.1:5000/overview`);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setPortfolio(data); // Update state with fetched portfolio data
+        const formattedData = {
+          total_value: data[0].total_value,
+          stocks: data.slice(1).map(stock => {
+            const [symbol, details] = Object.entries(stock)[0];
+            return { symbol, ...details };
+          })
+        };
+        setPortfolio(formattedData);
       } catch (error) {
         console.error('Error fetching portfolio data:', error);
       } finally {
-        setLoading(false); // End loading
+        setLoading(false);
       }
     };
-
+  
     fetchPortfolio();
-  }, [userId]); // Add [userId] as a dependency for fetching user-specific data in future implementations
-
+  }, []);
   
 
   /**
@@ -77,7 +83,7 @@ const UserProfile = () => {
     e.preventDefault();
     const action = isAdding ? 'add' : 'remove';
     try {
-      const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
+      const response = await fetch(`http://127.0.0.1:5000/modifyPortfolio/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,8 +97,16 @@ const UserProfile = () => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      const updatedPortfolio = await response.json();
-      setPortfolio(updatedPortfolio);
+      const data = await response.json();
+      // Asegúrate de que la respuesta se procese de la misma manera que la respuesta de /overview
+      const formattedData = {
+        total_value: data[0].total_value,
+        stocks: data.slice(1).map(stock => {
+          const [symbol, details] = Object.entries(stock)[0];
+          return { symbol, ...details };
+        })
+      };
+      setPortfolio(formattedData);
       setStockSymbol('');
       setQuantity('');
     } catch (error) {
@@ -100,62 +114,7 @@ const UserProfile = () => {
     }
   };
   
-  // Function to add a stock to the user's portfolio
-  const addStock = async () => {
-    setModifyLoading(true);
-    try {
-      const response = await fetch(`https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'add',
-          symbol: stockSymbol,
-          quantity: stockQuantity,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setPortfolio(data); // Update the portfolio with the new data
-      } else {
-        throw new Error(data.error || 'Error adding stock');
-      }
-    } catch (error) {
-      console.error('Error adding stock:', error);
-    } finally {
-      setModifyLoading(false);
-    }
-  };
-
-  // Function to remove a stock from the user's portfolio
-  const removeStock = async () => {
-    setModifyLoading(true);
-    try {
-      const response = await fetch(`http://127.0.0.1:5000/modify_portfolio/${userId}`, { // https://concise-honor-416313.ew.r.appspot.com/modify_portfolio/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'remove',
-          symbol: stockSymbol,
-          quantity: stockQuantity,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setPortfolio(data); // Update the portfolio with the new data
-      } else {
-        throw new Error(data.error || 'Error removing stock');
-      }
-    } catch (error) {
-      console.error('Error removing stock:', error);
-    } finally {
-      setModifyLoading(false);
-    }
-  };
-
+  
   return (
     <>
     <div className="portfolio-container" style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>
@@ -165,7 +124,7 @@ const UserProfile = () => {
         <>
           <h1>DEBUGGING DOLLARS</h1>
           <h2>PORTFOLIO OVERVIEW</h2>
-          <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
+          <p>Total portfolio value: ${portfolio?.total_value?.toFixed(2) || '0.00'}</p>
           <div className="modify-portfolio-section" style={{ marginBottom: '10px', backgroundColor: '#f2f2f2', padding: '5px' }}>
             <h3>Do you want to modify your portfolio?</h3>
             <form onSubmit={handleStockModification} style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
@@ -219,26 +178,28 @@ const UserProfile = () => {
             </form>
           </div>
             <div>
-              {Object.entries(portfolio.symbols).map(([symbol, details]) => (
-                <div
-                  key={symbol}
-                  className="stock-item"
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'left',
-                    alignItems: 'center',
-                    padding: '16px',
-                    backgroundColor: 'white',
-                    marginBottom: '16px',
-                    border: '1px solid black',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => fetchStockDetails(symbol)}
-                >
-                  <span className="font-medium text-lg">{symbol}</span>
-                  <span style={{ marginLeft: 'auto' }}>{details.quantity} stocks</span>
-                </div>
-              ))}
+            {portfolio.stocks.map(({ symbol, quantity, value }) => (
+              <div
+                key={symbol}
+                className="stock-item"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'left',
+                  alignItems: 'center',
+                  padding: '16px',
+                  backgroundColor: 'white',
+                  marginBottom: '16px',
+                  border: '1px solid black',
+                  cursor: 'pointer',
+                }}
+                onClick={() => fetchStockDetails(symbol)}
+              >
+                <span className="font-medium text-lg">{symbol}</span>
+                <span style={{ marginLeft: 'auto' }}>
+                  {quantity} stocks - Value: ${value.toFixed(2)}
+                </span>
+              </div>
+            ))}
             </div>
             {selectedStock && stockDetails[selectedStock] && (
               <div className="stock-details" style={{ marginTop: '32px' }}>
