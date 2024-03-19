@@ -1,13 +1,16 @@
+import hashlib
 from flask import Flask, jsonify, request
 import requests
 from flask_cors import CORS
 from sqlalchemy.pool import NullPool
 import oracledb
-from models import db
+from models import db, User
 
 # Initialize the Flask application
 app = Flask(__name__)
 CORS(app)  # Enable CORS to allow cross-origin requests, enhancing frontend-backend integration.
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 # Configuration settings for the application and database connection.
 un = 'ADMIN'
@@ -42,6 +45,30 @@ with app.app_context():
 # Configuration for Alpha Vantage API access.
 ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    
+    username = data.get('username')
+    password = (data.get("password"))
+
+    user = User.query.filter_by(USERNAME=username, PASSWORD=password).first()
+    if user:
+        # Si el usuario existe en la base de datos y las credenciales son correctas,
+        # devolvemos un mensaje de éxito junto con los datos del usuario
+        response = {
+            'message': 'Login successful',
+            'user_id': user.USERID,
+            'username': user.USERNAME
+        }
+        return jsonify(response), 200
+    else:
+        # Si las credenciales son incorrectas o el usuario no existe, devolvemos un mensaje de error
+        response = {'message': 'Invalid username or password'}
+        return jsonify(response), 401
+
 
 def fetch_current_stock_price(symbol):
     """
@@ -316,23 +343,6 @@ def modify_portfolio():
         if conn:
             pool.release(conn)
 
+
 if __name__ == '__main__':
     app.run(debug=True)  # Enable debug mode for development
-
-
-# -------- For next milestone. Ignore it --------
-# @app.route('/login', methods=['POST'])
-# def login():
-#     data = request.json
-#     username = data.get('username')
-#     password = data.get('password')
-
-#     user = User.query.filter_by(USERNAME=username, PASSWORD=password).first()
-    
-#     return jsonify({"message": "Login successful"}), 200
-
-# @app.route('/logout', methods=['GET'])
-# def logout():
-#     return jsonify({"message": "Logout successful"}), 200
-
-

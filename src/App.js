@@ -1,21 +1,22 @@
-import React from "react";
-import UserProfile from "./UserProfile";
-// Removed import for Login component as it's no longer directly utilized.
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import UserProfile from './UserProfile';
+import Login from './login';
 
-/**
- *
- * This component serves as the root of the application. In this simplified version,
- * it directly renders the UserProfile component. This approach is taken to streamline
- * the display process, focusing on showcasing the user profile information immediately
- * upon app launch.
- * 
- * Note: The previous version of this app included routing to different components (e.g., Login, UserProfile).
- * However, based on the current requirements of Google App Engine (static files), we've simplified the structure to directly load the user's profile,
- * eliminating the need for explicit routing.
- */
 function App() {
-  // Render UserProfile directly to display user's portfolio and other details.
-  return <UserProfile />;
+  // Determina si el usuario está autenticado
+  const isAuthenticated = true; // Esto debería ser una verificación real de autenticación
+  
+  return (
+    <Router>
+      <Routes>
+        {/* Ruta protegida */}
+        <Route path="/" element={isAuthenticated ? <UserProfile /> : <Navigate to="/login" />} />
+        {/* Ruta de inicio de sesión */}
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

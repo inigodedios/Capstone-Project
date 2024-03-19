@@ -1,249 +1,135 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import StockItem from './components/StockItem'; // Asegúrate de que la ruta sea correcta
+import StockDetails from './components/StockDetails'; // Asegúrate de que la ruta sea correcta
+import StockModificationForm from './components/StockModificationForm';
 
-/**
- * UserProfile
- * This component fetches and displays the portfolio details of a user including their stock holdings and individual stock details.
- * Utilizes useParams hook from react-router-dom to extract the userId parameter from the URL.
- * Manages state for the user's portfolio, individual stock details, selected stock, and loading states.
- */
 const UserProfile = () => {
-  const [stockDetails, setStockDetails] = useState({}); // State for storing details of selected stock
-  const [selectedStock, setSelectedStock] = useState(null); // State for tracking the currently selected stock
-  const [loading, setLoading] = useState(true); // State for tracking loading state of the portfolio fetch
-  const [loadingDetails, setLoadingDetails] = useState(false); // State for tracking loading state of the stock details fetch
-  const [stockSymbol, setStockSymbol] = useState(''); // State for tracking the stock symbol input
-  const [quantity, setQuantity] = useState(''); // State for tracking the quantity input
-  const [isAdding, setIsAdding] = useState(true); // State for tracking the action (add/remove) input
-  const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] }); // State for storing the user's portfolio data
+  const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [stockDetails, setStockDetails] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [stockSymbol, setStockSymbol] = useState('');
+  const [quantity, setQuantity] = useState(0); // Siempre es bueno inicializar con el tipo correcto
+  const [isAdding, setIsAdding] = useState(true);
 
-  useEffect(() => {
-
-    /**
-     * Fetches the user's portfolio data from the backend API when the component mounts.
-     * Updates the portfolio state with the fetched data.
-     * Sets loading state to indicate data fetching is in progress.
-     */
-    const fetchPortfolio = async () => {
-      setLoading(true); // Start loading
-      try {
-        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/overview`);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        const formattedData = {
-          total_value: data[0].total_value, // Extract total portfolio value from first item in response
-          stocks: data.slice(1).map(stock => { // Extract stock details from the rest of the items in response
-            const [symbol, details] = Object.entries(stock)[0]; //
-            return { symbol, ...details };
-          })
-        };
-        setPortfolio(formattedData);
-      } catch (error) {
-        console.error('Error fetching portfolio data:', error);
-      } finally {
-        setLoading(false);
+  // Ahora fetchPortfolio está definida en el ámbito global del componente
+  const fetchPortfolio = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/overview');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-    };
-  
-    fetchPortfolio();
-  }, []);
-  
-  /**
-   * Fetches details for a specific stock symbol.
-   * Checks if details are already loaded to avoid unnecessary fetches.
-   * Updates the stockDetails state with the new data or existing data if already fetched.
-   * @param {string} symbol - The symbol of the stock to fetch details for.
-   */
-  const fetchStockDetails = async (symbol) => {
-    setLoadingDetails(true); // Start loading details
-    if (stockDetails[symbol]) {
-      setSelectedStock(symbol); // Use existing data if available
-      setLoadingDetails(false); // End loading details
-    } else {
-      try {
-        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/stockinfo/${symbol}`);
-        if (!response.ok) {
-          throw new Error(`Network response was not ok for symbol: ${symbol}`);
-        }
-        const data = await response.json();
-        setStockDetails(prevDetails => ({
-          ...prevDetails,
-          [symbol]: data // Add new stock details to state
-        }));
-        setSelectedStock(symbol); // Update selected stock
-      } catch (error) {
-        console.error(`Error fetching details for ${symbol}:`, error);
-      } finally {
-        setLoadingDetails(false); // End loading details
-      }
+      const data = await response.json();
+      setPortfolio({
+        total_value: data[0].total_value,
+        stocks: data.slice(1).map(stock => ({
+          symbol: Object.keys(stock)[0],
+          ...Object.values(stock)[0],
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+    } finally {
+      setLoading(false);
     }
   };
-  
-    /**
-   * Handles the modification of the user's stock portfolio.
-   * Sends a request to the backend API to add or remove stocks from the portfolio.
-   * Displays an alert with error message if the request fails.
-   * Clears input fields and resets loading state after completion.
-   * @param {object} e - The event object representing the form submission.
-   */
-  const handleStockModification = async (e) => {
-    e.preventDefault(); // Prevents default form submission behavior
-    setModifyLoading(true); // Sets loading state to indicate modification is in progress
-    try {
-        const response = await fetch(`https://capstoneidg123.ew.r.appspot.com/modifyPortfolio/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                stock_symbol: stockSymbol.toUpperCase(),
-                quantity: Number(quantity),
-                operation: isAdding ? "ADD" : "REMOVE",
-            }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "An unexpected error occurred. Please try again.");
-      }
-        const formattedData = {
-            total_value: data[0].total_value,
-            stocks: data.slice(1).map(stock => {
-                const [symbol, details] = Object.entries(stock)[0];
-                return { symbol, ...details };
-            })
-        };
-        setPortfolio(formattedData);
-    } catch (error) {
-        alert(error.message); // Display alert with error message
-    } finally {
-        setModifyLoading(false); 
-        setStockSymbol('');
-        setQuantity('');
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, []);
+
+
+
+// Asegúrate de que esta función use los estados adecuados y llame a fetchPortfolio correctamente
+const handleModify = async (symbol, quantity, operation) => {
+  setLoading(true);
+  try {
+    const response = await fetch('http://127.0.0.1:5000/modifyPortfolio/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock_symbol: symbol, quantity, operation }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to modify portfolio");
     }
+
+    fetchPortfolio(); // Esto llamará a fetchPortfolio para actualizar los datos
+    console.log("Portfolio modified successfully");
+  } catch (error) {
+    console.error("Error modifying portfolio:", error);
+    alert("Failed to modify portfolio: " + error.message);
+  } finally {
+    setLoading(false);
+  }
 };
+
+
+  const fetchStockDetails = async (symbol) => {
+    if (stockDetails[symbol]) {
+      setSelectedStock(symbol);
+      return;
+    }
+
+    setLoadingDetails(true);
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/stockinfo/${symbol}`);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok for symbol: ${symbol}`);
+      }
+      const data = await response.json();
+      setStockDetails(prev => ({ ...prev, [symbol]: data }));
+      setSelectedStock(symbol);
+    } catch (error) {
+      console.error(`Error fetching details for ${symbol}:`, error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   return (
     <>
-    <div className="portfolio-container" style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>
-      {loading ? (
-        <p>Loading...</p>
-      ) : portfolio ? (
-        <>
-          <h1>DEBUGGING DOLLARS</h1>
-          <h2>PORTFOLIO OVERVIEW</h2>
-          <p>Total portfolio value: ${portfolio?.total_value?.toFixed(2) || '0.00'}</p>
-          <div className="modify-portfolio-section" style={{ marginBottom: '10px', backgroundColor: '#f2f2f2', padding: '5px' }}>
-            <h3>Do you want to modify your portfolio?</h3>
-            <form onSubmit={handleStockModification} style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
-                <label htmlFor="stockSymbol" style={{ marginBottom: '5px' }}>Stock symbol</label>
-                <input
-                  id="stockSymbol"
-                  value={stockSymbol}
-                  onChange={(e) => setStockSymbol(e.target.value)}
-                  required
-                  style={{ padding: '5px' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
-                <label htmlFor="quantity" style={{ marginBottom: '5px' }}>Quantity</label>
-                <input
-                  id="quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  required
-                  style={{ padding: '5px' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '20px' }}>
-              <span>What do you want to do?</span>
-                <label style={{ marginBottom: '5px' }}>
-                  <input
-                    type="radio"
-                    name="action"
-                    value="add"
-                    checked={isAdding}
-                    onChange={() => setIsAdding(true)}
-                  />
-                  Add
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="action"
-                    value="remove"
-                    checked={!isAdding}
-                    onChange={() => setIsAdding(false)}
-                  />
-                  Remove
-                </label>
-              </div>
-              <button type="submit" style={{ padding: '20px', fontSize: '19px', cursor: 'pointer', alignSelf: 'flex-start' }}>
-                MODIFY PORTFOLIO
-              </button>
-            </form>
-          </div>
+      <div style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <>
+            <h1>DEBUGGING DOLLARS</h1>
+            <h2>PORTFOLIO OVERVIEW</h2>
+            <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
+  
+            {/* Lugar sugerido para el formulario de modificación del portafolio */}
+            <StockModificationForm
+              onModify={handleModify}
+              stockSymbol={stockSymbol}
+              setStockSymbol={setStockSymbol}
+              quantity={quantity}
+              setQuantity={setQuantity}
+              isAdding={isAdding}
+              setIsAdding={setIsAdding}
+            />  
+            {/* Aquí continúa la UI para listar los stocks y mostrar detalles */}
             <div>
-            {portfolio.stocks.map(({ symbol, quantity, value }) => (
-              <div
-                key={symbol}
-                className="stock-item"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'left',
-                  alignItems: 'center',
-                  padding: '16px',
-                  backgroundColor: 'white',
-                  marginBottom: '16px',
-                  border: '1px solid black',
-                  cursor: 'pointer',
-                }}
-                onClick={() => fetchStockDetails(symbol)}
-              >
-                <span className="font-medium text-lg">{symbol}</span>
-                <span style={{ marginLeft: 'auto' }}>
-                  {quantity} stocks - Value: ${value.toFixed(2)}
-                </span>
-              </div>
-            ))}
+              {portfolio.stocks.map(stock => (
+                <StockItem
+                  key={stock.symbol}
+                  stock={stock}
+                  onSelect={fetchStockDetails}
+                />
+              ))}
             </div>
+            
             {selectedStock && stockDetails[selectedStock] && (
-              <div className="stock-details" style={{ marginTop: '32px' }}>
-              <h3 className="text-xl font-bold mb-4">Stock Details for {selectedStock}</h3>
-              {loadingDetails ? (
-                <p>Loading details...</p>
-              ) : (
-                <table className="details-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      {['Date', 'Open', 'High', 'Low', 'Close', 'Volume'].map((header) => (
-                        <th key={header} style={{ border: '1px solid black', padding: '8px', textAlign: 'left', backgroundColor: 'white', color: 'black' }}>{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stockDetails[selectedStock].map(([date, data], index) => (
-                      <tr key={index} style={{ backgroundColor:'white'}}>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{date}</td>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['1. open']}</td>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['2. high']}</td>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['3. low']}</td>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['4. close']}</td>
-                        <td style={{ border: '1px solid black', padding: '8px' }}>{data['5. volume']}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+              <StockDetails symbol={selectedStock} details={stockDetails[selectedStock]} />
             )}
           </>
-        ) : (
-          <p>No portfolio data available.</p>
         )}
       </div>
     </>
-  );
-        };  
+  );  
+};
+
 export default UserProfile;

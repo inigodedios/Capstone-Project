@@ -1,83 +1,27 @@
+import React from 'react';
+import LoginForm from './components/LoginForm';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
+const Login = () => {
+  const navigate = useNavigate(); // Hook de React Router para la navegación
 
+  const handleLogin = async (formData) => {
+    try {
+      const response = await axios.post(`http://127.0.0.1:5000/login`, formData);
+      console.log(response.data); // Maneja la respuesta del servidor según sea necesario
+      navigate('/'); // Redirige al usuario a la página de inicio después de iniciar sesión
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
+  return (
+    <div>
+      <h2>Login to Your Account</h2>
+      <LoginForm onSubmit={handleLogin} />
+    </div>
+  );
+};
 
-
-
-
-
-
-
-
-
-// ------ FOR MILESTONE 3. Ignore it --------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-
-// function Login() {
-//   const [username, setUsername] = useState('');
-//   const [password, setPassword] = useState('');
-//   const navigate = useNavigate();
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     try {
-//       const response = await fetch('https://capstoneidg123.ew.r.appspot.com/login', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({ username, password }),
-//       });
-      
-//       if (response.ok) {
-//         const data = await response.json();
-//         navigate('/overview');
-//       } else {
-//         alert("Invalid login");
-//       }
-//     } catch (error) {
-//       console.error('Error during login:', error);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <form onSubmit={handleSubmit}>
-//         <input 
-//           type="text" 
-//           value={username} 
-//           onChange={(e) => setUsername(e.target.value)} 
-//           placeholder="Username" 
-//           required 
-//         />
-//         <input 
-//           type="password" 
-//           value={password} 
-//           onChange={(e) => setPassword(e.target.value)} 
-//           placeholder="Password" 
-//           required 
-//         />
-//         <button type="submit">Login</button>
-//       </form>
-//     </div>
-//   );
-// }
-
-// export default Login;
+export default Login;
