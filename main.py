@@ -12,6 +12,8 @@ from flask_session import Session
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
+#CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 app.config['SECRET_KEY'] = 'una_clave_secreta_muy_segura'
 app.config['SESSION_TYPE'] = 'filesystem'  # Puedes usar 'redis', 'memcached', 'mongodb', o 'sqlalchemy' también.
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
