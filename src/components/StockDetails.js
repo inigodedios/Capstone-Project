@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import StockChart from './StockChart';
+import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 
 const StockDetails = ({ symbol }) => {
   const [details, setDetails] = useState(null);
@@ -75,6 +80,9 @@ const StockDetails = ({ symbol }) => {
           ))}
         </tbody>
       </table>
+      {details && details.length > 0 && (
+        <StockChart details={details} />
+      )}
     </div>
   );
 };

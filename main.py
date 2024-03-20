@@ -20,7 +20,6 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 #Session(app)
 
-
 # Configuration settings for the application and database connection.
 un = 'ADMIN'
 pw = 'tescYb-rojjaq-rismy6'
@@ -68,21 +67,17 @@ def login():
     print(user)
     if user:
         session['user_id'] = user.USERID  # Establece el usuario en la sesión
-        response = {
-            'message': 'Login successful',
-            'username': user.USERNAME,
-            'user_id': user.USERID  # Incluye el user_id en la respuesta
-        }
+        response = {'message': 'Login successful'}
         return jsonify(response), 200
     else:
-        response = {'message': 'Invalid username or password'}
+        response = {'message': 'Username or Password incorrect'}
         return jsonify(response), 401
 
 
 @app.route('/logout', methods=['GET'])
 def logout():
     session.pop('user_id', None)  # Elimina el usuario de la sesión
-    return jsonify({'message': 'Logout successful'}), 200
+    return jsonify({'message': 'Logout.'}), 200
 
 
 def fetch_current_stock_price(symbol):

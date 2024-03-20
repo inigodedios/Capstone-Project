@@ -25,7 +25,6 @@ const Login = () => {
       setError('Error de login: Usuario o contraseña incorrectos');
       console.error('Error:', error);
     }
-
 };
 
 // Ejemplo de un botón de logout que podrías agregar en UserProfile.js o en otro componente
