@@ -51,6 +51,7 @@ const handleModify = async (symbol, quantity, operation) => {
   try {
     const response = await fetch('http://127.0.0.1:5001/modifyPortfolio/', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stock_symbol: symbol, quantity, operation }),
     });
