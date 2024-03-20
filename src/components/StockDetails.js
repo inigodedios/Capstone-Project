@@ -21,7 +21,7 @@ const StockDetails = ({ symbol }) => {
       try {
         setLoading(true);
         setError('');
-        const response = await fetch(`http://127.0.0.1:5001/stockinfo/${symbol}`);
+        const response = await fetch(`https://capstoneinifinal.lm.r.appspot.com/stockinfo/${symbol}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch details for symbol: ${symbol}`);
         }

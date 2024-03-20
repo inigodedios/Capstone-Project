@@ -19,7 +19,7 @@ const UserProfile = () => {
   const fetchPortfolio = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5001/overview', {
+      const response = await fetch('https://capstoneinifinal.lm.r.appspot.com/overview', {
       method: 'GET',
       credentials: 'include'
       });
@@ -51,7 +51,7 @@ const UserProfile = () => {
 const handleModify = async (symbol, quantity, operation) => {
   setLoading(true);
   try {
-    const response = await fetch('http://127.0.0.1:5001/modifyPortfolio/', {
+    const response = await fetch('https://capstoneinifinal.lm.r.appspot.com/modifyPortfolio/', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -82,7 +82,7 @@ const handleModify = async (symbol, quantity, operation) => {
 
     setLoadingDetails(true);
     try {
-      const response = await fetch(`http://127.0.0.1:5001/stockinfo/${symbol}`);
+      const response = await fetch(`https://capstoneinifinal.lm.r.appspot.com/stockinfo/${symbol}`);
       if (!response.ok) {
         throw new Error(`Network response was not ok for symbol: ${symbol}`);
       }
