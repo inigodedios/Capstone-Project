@@ -9,6 +9,7 @@ import StockDetails from './components/StockDetails'; // Corrige el typo aquí '
 
 const App = () => {
   return (
+    <div className='Capstone-Project'>
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -18,6 +19,7 @@ const App = () => {
         </Route>
       </Routes>
     </Router>
+    </div>
   );
 };
 

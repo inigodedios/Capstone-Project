@@ -2,4 +2,8 @@
     "rewrites":  [
       {"source": "/(.*)", "destination": "/index.html"}
     ]
+<<<<<<< HEAD
   }
+=======
+  }
+>>>>>>> cf4e870e (Added vercel.json for deployment)
