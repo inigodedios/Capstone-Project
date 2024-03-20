@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,9 +8,16 @@ const Login = () => {
   const [error, setError] = useState(''); // Estado para almacenar mensajes de error
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    if (isAuthenticated) {
+      navigate('/'); // Redirige al usuario a la página principal si ya está autenticado
+    }
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
       const response = await fetch('http://127.0.0.1:5001/login', {
         method: 'POST',
@@ -18,14 +25,26 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', 
       });
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userId', response.user_id); 
-      navigate('/');
+  
+      const data = await response.json(); // Convertir la respuesta en JSON
+  
+      if (response.ok) {
+        // Si la respuesta del servidor es exitosa (HTTP 200-299), establecer la sesión y redirigir
+        localStorage.setItem('isAuthenticated', 'true');
+        // Asegúrate de que el servidor responde con el ID de usuario adecuado en el cuerpo de la respuesta
+        localStorage.setItem('userId', data.user_id); // Ajustar según el campo correcto
+        navigate('/');
+      } else {
+        // Manejar respuestas no exitosas mostrando un mensaje de error
+        setError('Error de login: Usuario o contraseña incorrectos');
+      }
     } catch (error) {
-      setError('Error de login: Usuario o contraseña incorrectos');
+      // Manejar errores de red o fallos en la solicitud
+      setError('Error de login: No se pudo conectar al servidor');
       console.error('Error:', error);
     }
-};
+  };
+   
 
 // Ejemplo de un botón de logout que podrías agregar en UserProfile.js o en otro componente
 

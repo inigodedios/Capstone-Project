@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StockItem from './components/StockItem'; // Asegúrate de que la ruta sea correcta
 import StockDetails from './components/StockDetails'; // Asegúrate de que la ruta sea correcta
 import StockModificationForm from './components/StockModificationForm';
+import LogoutButton from './components/Logout';
 
 const UserProfile = () => {
   const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
@@ -101,10 +102,11 @@ const handleModify = async (symbol, quantity, operation) => {
           <p>Loading...</p>
         ) : (
           <>
+          <nav><LogoutButton/></nav>
             <h1>DEBUGGING DOLLARS</h1>
             <h2>PORTFOLIO OVERVIEW</h2>
             <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
-  
+            
             {/* Lugar sugerido para el formulario de modificación del portafolio */}
             <StockModificationForm
               onModify={handleModify}
