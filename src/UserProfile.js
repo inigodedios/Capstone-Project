@@ -13,6 +13,7 @@ const UserProfile = () => {
   const [stockSymbol, setStockSymbol] = useState('');
   const [quantity, setQuantity] = useState(0); // Siempre es bueno inicializar con el tipo correcto
   const [isAdding, setIsAdding] = useState(true);
+  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
 
   // Ahora fetchPortfolio está definida en el ámbito global del componente
   const fetchPortfolio = async () => {
@@ -95,19 +96,59 @@ const handleModify = async (symbol, quantity, operation) => {
     }
   };
 
+  const selectStock = (symbol) => {
+    fetchStockDetails(symbol);
+    setIsDetailsVisible(true);
+  };
+
+
+  const gridLayoutStyle = {
+    display: 'grid',
+    gridTemplateRows: 'auto 1fr',
+    gridTemplateColumns: isDetailsVisible ? '1fr 2fr' : '1fr',
+    gridTemplateAreas: `
+      'header header'
+      'main details'
+    `,
+    gap: '20px',
+    margin: '20px',
+    height: '100vh', // Ajusta el alto al de la ventana del navegador
+  };
+
+  const headerStyle = {
+    gridArea: 'header',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
+
+  const mainStyle = {
+    gridArea: 'main',
+    overflowY: 'auto', // Permite el desplazamiento si la lista es muy larga
+  };
+
+  const detailsStyle = {
+    gridArea: 'details',
+  };
+
   return (
-    <>
-      <div style={{ margin: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={gridLayoutStyle}>
+      <div style={headerStyle}>
+        <div>
+          <h1>DEBUGGING DOLLARS</h1>
+          <h2>PORTFOLIO OVERVIEW</h2>
+          {loading ? null : (
+            <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
+          )}
+        </div>
+        <LogoutButton />
+      </div>
+
+      <div style={mainStyle}>
         {loading ? (
           <p>Loading...</p>
         ) : (
           <>
-          <nav><LogoutButton/></nav>
-            <h1>DEBUGGING DOLLARS</h1>
-            <h2>PORTFOLIO OVERVIEW</h2>
-            <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
-            
-            {/* Lugar sugerido para el formulario de modificación del portafolio */}
             <StockModificationForm
               onModify={handleModify}
               stockSymbol={stockSymbol}
@@ -116,26 +157,27 @@ const handleModify = async (symbol, quantity, operation) => {
               setQuantity={setQuantity}
               isAdding={isAdding}
               setIsAdding={setIsAdding}
-            />  
-            {/* Aquí continúa la UI para listar los stocks y mostrar detalles */}
-            <div>
-              {portfolio.stocks.map(stock => (
-                <StockItem
-                  key={stock.symbol}
-                  stock={stock}
-                  onSelect={fetchStockDetails}
-                />
-              ))}
-            </div>
-            
-            {selectedStock && stockDetails[selectedStock] && (
-              <StockDetails symbol={selectedStock} details={stockDetails[selectedStock]} />
-            )}
+            />
+            {/* Lista de stocks */}
+            {portfolio.stocks.map(stock => (
+              <StockItem
+                key={stock.symbol}
+                stock={stock}
+                onSelect={selectStock}
+              />
+            ))}
           </>
         )}
       </div>
-    </>
-  );  
+
+      {isDetailsVisible && selectedStock && stockDetails[selectedStock] && (
+        <div style={detailsStyle}>
+          <StockDetails symbol={selectedStock} details={stockDetails[selectedStock]} />
+        </div>
+      )}
+    </div>
+  );
 };
+
 
 export default UserProfile;
