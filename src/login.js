@@ -46,15 +46,6 @@ const Login = () => {
   };
    
 
-// Ejemplo de un botón de logout que podrías agregar en UserProfile.js o en otro componente
-
-const handleLogout = () => {
-  localStorage.removeItem('isAuthenticated');
-  localStorage.removeItem('userId');
-  window.location.href = '/login'; // Esta línea redirige al usuario a /login
-};
-
-
   return (
     <div>
       <h2>Login to Your Account</h2>
