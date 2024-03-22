@@ -3,6 +3,7 @@ from sqlalchemy import Sequence
 from sqlalchemy.schema import Identity
 from flask_sqlalchemy import SQLAlchemy
 
+
 # Initialize SQLAlchemy to handle database operations
 db = SQLAlchemy()
 

@@ -1,28 +1,25 @@
-import hashlib
-from flask import Flask, jsonify, request
-import requests
-from flask_cors import CORS
+from flask import Flask, jsonify, request, session
 from sqlalchemy.pool import NullPool
-import oracledb
+from flask_cors import CORS
 from models import db, User
-from flask import Flask, session
-from flask_session import Session
+import requests
+import oracledb
+import hashlib
 
+#---------- DEFINITION OF CONFIGURATION AND CREDENTIALS ----------
 # Initialize the Flask application
 app = Flask(__name__)
+# Enable Cross-Origin Resource Sharing (CORS) with credentials suppor
 CORS(app, supports_credentials=True)
-
-#CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
-
-app.config['SECRET_KEY'] = 'una_clave_secreta_muy_segura'
-app.config['SESSION_TYPE'] = 'filesystem'  # Puedes usar 'redis', 'memcached', 'mongodb', o 'sqlalchemy' también.
+# Flask application configuration
+app.config['SECRET_KEY'] = 'una_clave_secreta_muy_segura'  # Secret key for signing sessions
+app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
-#Session(app)
+app.config['SESSION_COOKIE_SECURE'] = True  # Ensure session cookies are sent over HTTPS
 
 # Configuration settings for the application and database connection.
-un = 'ADMIN'
-pw = 'tescYb-rojjaq-rismy6'
+un = 'ADMIN' # Username for the Oracle database
+pw = 'tescYb-rojjaq-rismy6' # Password for the Oracle database
 dsn = """
 (description=
     (retry_count=20)
@@ -31,7 +28,12 @@ dsn = """
     (connect_data=(service_name=ga981702cb90572_dbcaps_low.adb.oraclecloud.com))
     (security=(ssl_server_dn_match=yes))
 )
-"""
+""" # Data source name for Oracle database
+# Configuration for Alpha Vantage API access.
+ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
+ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+
+# Create a connection pool for Oracle database connections
 pool = oracledb.create_pool(user=un, password=pw, dsn=dsn)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'oracle+oracledb://'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -50,36 +52,9 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# Configuration for Alpha Vantage API access.
-ALPHA_VANTAGE_API_KEY = 'AQ20KT9AHNJVT0UM'
-ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 
 
-@app.route('/login', methods=['POST'])
-def login():
-    print(0)
-    data = request.get_json()
-    print(0.5)
-    username = data.get('username')
-    password = data.get("password")
-    print(1)
-    user = User.query.filter_by(USERNAME=username, PASSWORD=password).first()
-    print(user)
-    if user:
-        session['user_id'] = user.USERID  # Establece el usuario en la sesión
-        response = {'message': 'Login successful'}
-        return jsonify(response), 200
-    else:
-        response = {'message': 'Username or Password incorrect'}
-        return jsonify(response), 401
-
-
-@app.route('/logout', methods=['GET'])
-def logout():
-    session.pop('user_id', None)  # Elimina el usuario de la sesión
-    return jsonify({'message': 'Logout.'}), 200
-
-
+#---------- HELPER FUNCTIONS ----------
 def fetch_current_stock_price(symbol):
     """
     Fetches the current stock price for a given symbol using the Alpha Vantage API.
@@ -109,43 +84,125 @@ def home():
     Returns:
     str: A welcoming message indicating the service's purpose.
     """
-    return "Welcome to DebuggingDollars - Your Stock Tracking Application"
+    return "Welcome to DebuggingDollars - Your Stock Tracking Application"    
+
+
+#---------- SERVER ENDPOINTS ----------
+@app.route('/register', methods=['POST'])
+def register():
+    """
+    Registers a new user in the system.
+    Expects a JSON payload with 'username' and 'password'.
+    Hashes the password before storing it.
+    Checks for existing users to avoid duplicates.
+    Returns a success message or an error if registration fails.
+    """
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    # Hash the password before storing
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    
+    # Check for existing user with the same username
+    existing_user = User.query.filter_by(USERNAME=username).first()
+    if existing_user:
+        return jsonify({'message': 'Username already exists, please choose another one'}), 409
+    try:
+        new_user = User(USERNAME=username, PASSWORD=password_hash)
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'User registered successfully'}), 201
+    except Exception as e:
+        return jsonify({'message': 'An error occurred during registration', 'error': str(e)}), 500
+
+@app.route('/login', methods=['POST'])
+def login():
+    """
+    Handles user login by checking provided username and password.
+    
+    Expects a JSON payload with 'username' and 'password'.
+    If the username exists and the password matches (after hashing),
+    the user's ID is stored in the session to indicate they are logged in.
+    
+    Returns a success message if login is successful,
+    otherwise returns an error message.
+    """
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = User.query.filter_by(USERNAME=username).first()
+    
+    # If the user exists and the password hash matches the stored hash, login is successful
+    if user and user.PASSWORD == hashlib.sha256(password.encode()).hexdigest():
+        # Store the user's ID in the session to mark them as logged in
+        session['user_id'] = user.USERID  # Establece el usuario en la sesión
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        # If login details are incorrect, return an error message
+        return jsonify({'message': 'Username or Password incorrect'}), 401
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    """
+    Handles user logout by checking if a user is logged in (i.e., 'user_id' exists in session)
+    and then removing the user's ID from the session if present.
+    
+    Returns a success message indicating whether the user was logged in and has been logged out,
+    or if no user was logged in to begin with.
+    """
+    if 'user_id' in session:
+        session.pop('user_id')  # Remove 'user_id' from session to log the user out
+        message = 'Logout successful'
+    else:
+        message = 'No user was logged in'
+    
+    return jsonify({'message': message}), 200
 
 @app.route('/overview', methods=['GET'])
 def get_portfolio():
     """
-    Retrieves the complete portfolio for a specific user.
-
-    For demonstration purposes, the user_id is statically set to 1. In a real application,
-    this would be dynamically determined based on the authenticated user's ID.
-
-    Returns a JSON response containing the total value of the user's portfolio
-    and detailed information about each stock within it.
+    Retrieves the complete portfolio for the currently authenticated user.
+    
+    This function checks if a user is authenticated by looking for 'user_id' in the session.
+    If authenticated, it queries the database for the user's stock holdings, 
+    fetches the current stock prices using the Alpha Vantage API, and calculates 
+    the total value of the portfolio along with the value of individual stock holdings.
+    
+    Returns:
+    - A JSON response containing the total value of the user's portfolio and 
+      detailed information about each stock within it if the user is authenticated.
+    - A JSON response with an error message if the user is not authenticated or 
+      if any other error occurs during the process.
     """
+    # Check if the user is authenticated
     if 'user_id' not in session:
-        
+        # Return error message if user is not authenticated
         return jsonify({'message': 'User not authenticated'}), 401
 
     user_id = session['user_id']
 
-    response_data = []  
-    total_value = 0 
+    response_data = []
+    total_value = 0
 
     try:
-        conn = pool.acquire()  # Acquire database connection from the connection pool
-        cursor = conn.cursor()  # Create a new cursor
+        conn = pool.acquire()
+        cursor = conn.cursor()
         
-        # Execute SQL query to fetch user's stocks and their quantities
+        # Execute a SQL query to fetch the user's stocks and their quantities
         cursor.execute("""
             SELECT STOCKSYMBOL, QUANTITY
             FROM USER_STOCKS
             WHERE USERID = :1
         """, [user_id])
         
-        rows = cursor.fetchall()  # Fetch all rows from the query result
-        # Iterate through each row to calculate stock values and aggregate data
+        rows = cursor.fetchall()
+
+        # Iterate through each row to fetch current stock prices and calculate values
         for row in rows:
-            symbol, quantity = row  
+            symbol, quantity = row
+            # Set parameters for the API request
             params = {
                 "function": "GLOBAL_QUOTE",
                 "symbol": symbol,
@@ -154,23 +211,28 @@ def get_portfolio():
             response = requests.get(ALPHA_VANTAGE_BASE_URL, params=params)
             data = response.json()
 
-            # If stock price data is available, calculate and append to response_data
-            if "Global Quote" in data and "05. price" in data["Global Quote"]:
+            # Calculate and append stock value to response data if data is available
+            if response.status_code == 200 and "Global Quote" in data and "05. price" in data["Global Quote"]:
                 price = float(data["Global Quote"]["05. price"])
                 value = quantity * price
-                total_value += value  # Add to total portfolio value
+                total_value += value  # Accumulate total portfolio value
                 response_data.append({symbol: {"quantity": quantity, "value": round(value, 2)}})
             else:
-                raise ValueError(f"Failed to retrieve data for {symbol}")
+                # Handle case where stock price data is not available
+                response_data.append({symbol: {"quantity": quantity, "value": None}})
 
-        # Prepend total portfolio value to the response data
+        # Include total portfolio value at the beginning of the response data
         response_data.insert(0, {"total_value": round(total_value, 2)})
+
         return jsonify(response_data)
     except Exception as e:
+        # Return error message in case of an exception
         return jsonify({"error": str(e)}), 500
     finally:
+        # Release the database connection back to the pool
         if conn:
             pool.release(conn)
+
 
 @app.route('/stockinfo/<symbol>', methods=['GET'])
 def get_stock_info(symbol):
@@ -236,21 +298,19 @@ def modify_portfolio():
     - JSON response with error message if any part of the process fails, including invalid 
       stock symbols, invalid operations, or database access issues.
     """
-    # Static user_id for demonstration; will be replaced with dynamic user authentication in production
+
     if 'user_id' not in session:
         return jsonify({'message': 'User not authenticated'}), 401
 
     user_id = session['user_id']
-    data = request.json  # Extract data from the request body
-    symbol = data.get('stock_symbol', '').upper()  # Normalize stock symbol to uppercase
-    quantity = int(data.get('quantity', 0))  # Convert quantity to integer
-    operation = data.get('operation', '').upper()  # Normalize operation to uppercase
+    data = request.json
+    symbol = data.get('stock_symbol', '').upper()
+    quantity = int(data.get('quantity', 0))
+    operation = data.get('operation', '').upper()
 
-    # Validate the operation
     if operation not in ['ADD', 'REMOVE']:
         return jsonify({"error": "Invalid action specified"}), 400
     
-    # Fetch current stock price using helper function
     current_price = fetch_current_stock_price(symbol)
     if current_price is None:
         return jsonify({"error": "Invalid stock symbol"}), 400
@@ -362,4 +422,4 @@ def modify_portfolio():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)  # Enable debug mode for development
+    app.run(debug=True, port=5001)

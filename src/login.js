@@ -1,87 +1,89 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); // Estado para almacenar mensajes de error
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
     if (isAuthenticated) {
-      navigate('/'); // Redirige al usuario a la página principal si ya está autenticado
+      navigate('/');
     }
   }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
     try {
       const response = await fetch('https://capstoneinifinal.lm.r.appspot.com/login', {
         method: 'POST',
-        body: JSON.stringify({ username: username, password: password }),
+        body: JSON.stringify({ username, password }),
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', 
       });
   
-      const data = await response.json(); // Convertir la respuesta en JSON
+      const data = await response.json();
   
       if (response.ok) {
-        // Si la respuesta del servidor es exitosa (HTTP 200-299), establecer la sesión y redirigir
         localStorage.setItem('isAuthenticated', 'true');
-        // Asegúrate de que el servidor responde con el ID de usuario adecuado en el cuerpo de la respuesta
-        localStorage.setItem('userId', data.user_id); // Ajustar según el campo correcto
+        localStorage.setItem('userId', data.user_id);
         navigate('/');
       } else {
-        // Manejar respuestas no exitosas mostrando un mensaje de error
         setError('Error de login: Usuario o contraseña incorrectos');
       }
     } catch (error) {
-      // Manejar errores de red o fallos en la solicitud
       setError('Error de login: No se pudo conectar al servidor');
       console.error('Error:', error);
     }
   };
-   
-
-// Ejemplo de un botón de logout que podrías agregar en UserProfile.js o en otro componente
-
-const handleLogout = () => {
-  localStorage.removeItem('isAuthenticated');
-  localStorage.removeItem('userId');
-  window.location.href = '/login'; // Esta línea redirige al usuario a /login
-};
-
 
   return (
-    <div>
-      <h2>Login to Your Account</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleLogin}>
-        <div>
-          <label htmlFor="username">Username:</label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header text-center">
+              <h1>DEBUGGING DOLLARS</h1>
+            </div>
+            <div className="card-body">
+              <h2 className="card-title text-center mb-4">Login to Your Account</h2>
+              {error && <p className="text-danger text-center">{error}</p>}
+              <form onSubmit={handleLogin}>
+                <div className="mb-3">
+                  <label htmlFor="username" className="form-label">Username:</label>
+                  <input
+                    id="username"
+                    type="text"
+                    className="form-control"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">Password:</label>
+                  <input
+                    id="password"
+                    type="password"
+                    className="form-control"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="text-center">
+                  <button type="submit" className="btn btn-primary">Login</button>
+                </div>
+              </form>
+              <div className="mt-3 text-center">
+                <p>¿No tienes una cuenta? <button className="btn btn-link" onClick={() => navigate('/signup')}>Regístrate aquí</button></p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Login</button>
-      </form>
+      </div>
     </div>
   );
 };

@@ -1,11 +1,10 @@
-// En tu archivo App.js o donde definas tus rutas
-
 import React from 'react';
 import UserProfile from './UserProfile';
-import Login from './login'; // Asegúrate de que la ruta sea correcta y la capitalización coincida con el nombre del archivo
+import Login from './login';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ProtectedRoute from './components/ProtectedRoute'; // Verifica la ruta correcta
-import StockDetails from './components/StockDetails'; // Corrige el typo aquí '.components' debe ser './components'
+import ProtectedRoute from './components/ProtectedRoute';
+import SignUpForm from './SignUp';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App = () => {
   return (
@@ -13,7 +12,7 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        {/* Envoltura para rutas protegidas con ProtectedRoute */}
+        <Route path="/signup" element={<SignUpForm />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<UserProfile />} />
         </Route>
@@ -24,3 +23,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+
