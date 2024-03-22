@@ -2,14 +2,23 @@ import React, { useState, useEffect } from 'react';
 import StockChart from './StockChart';
 import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
+// Register Chart.js components required for rendering the charts
 Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-
+/**
+ * Renders detailed stock information for a given stock symbol.
+ * Fetches stock data on component mount and displays it in a table and a chart.
+ * 
+ * @param {Object} props - Component props.
+ * @param {string} props.symbol - The stock symbol to fetch details for.
+ * @returns {JSX.Element} The component rendering stock details including a data table and a chart.
+ */
 const StockDetails = ({ symbol }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Fetch stock details when the component mounts or the symbol changes
   useEffect(() => {
     const fetchStockDetails = async () => {
       if (!symbol) {
@@ -17,7 +26,6 @@ const StockDetails = ({ symbol }) => {
         setError('No stock symbol provided');
         return;
       }
-  
       try {
         setLoading(true);
         setError('');
@@ -48,7 +56,7 @@ const StockDetails = ({ symbol }) => {
     fetchStockDetails();
   }, [symbol]);
   
-
+  // Conditional rendering based on loading state and presence of data
   if (loading) return <div>Loading stock details...</div>;
   if (error) return <div>Error fetching stock details: {error}</div>;
   if (!details) return <div>No details available for {symbol}.</div>;

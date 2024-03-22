@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
 
+/**
+ * Displays a form for modifying the user's stock portfolio, allowing them to add or remove stocks.
+ * 
+ * @param {Object} props The component props.
+ * @param {Function} props.onModify Function to call when the form is submitted to modify the portfolio.
+ * @param {string} props.stockSymbol The current value of the stock symbol input.
+ * @param {Function} props.setStockSymbol Function to update the stock symbol state.
+ * @param {number} props.quantity The current value of the quantity input.
+ * @param {Function} props.setQuantity Function to update the quantity state.
+ * @param {boolean} props.isAdding Boolean indicating if the operation is to add (true) or remove (false) stocks.
+ * @param {Function} props.setIsAdding Function to toggle the isAdding state.
+ * @returns The StockModificationForm component.
+ */
 const StockModificationForm = ({
   onModify,
   stockSymbol,
@@ -9,14 +22,19 @@ const StockModificationForm = ({
   isAdding,
   setIsAdding,
 }) => {
+  /**
+   * Handles the form submission, validating the input and calling the onModify function with the form values.
+   * @param {Event} e The form submission event.
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     const quantityNum = parseInt(quantity, 10);
+     // Validates the inputs: checks if stockSymbol is filled and quantity is a positive number.
     if (!stockSymbol || isNaN(quantityNum) || quantityNum <= 0) {
       alert("Please enter a valid stock symbol and quantity.");
       return;
     }
-
+    // Calls the onModify function passed from the parent component with the form values.
     onModify(stockSymbol, quantityNum, isAdding ? "ADD" : "REMOVE");
     setStockSymbol('');
     setQuantity('');

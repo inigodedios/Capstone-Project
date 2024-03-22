@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * The Login component allows users to enter their credentials (username and password)
+ * to authenticate and gain access to the user profile page.
+ * 
+ * @returns The Login component renders a form for username and password input,
+ * and provides functionality for user authentication and navigation to the user profile upon successful login.
+ */
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
   const navigate = useNavigate();
 
+  /**
+   * useEffect hook checks if the user is already authenticated (based on localStorage data)
+   * and navigates to the home page if true.
+   */
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
     if (isAuthenticated) {
@@ -14,31 +26,39 @@ const Login = () => {
     }
   }, [navigate]);
 
+  /**
+   * Handles the login submission event. It sends a POST request with the username and password
+   * to the server for authentication. Upon success, it stores the authentication status and user ID
+   * in localStorage and navigates to the home page.
+   * 
+   * @param {Object} e - The event object associated with the form submission.
+   */
   const handleLogin = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevents the default form submission behavior
     try {
       const response = await fetch('https://capstoneinifinal.lm.r.appspot.com/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
+        credentials: 'include',
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('userId', data.user_id);
         navigate('/');
       } else {
-        setError('Error de login: Usuario o contraseña incorrectos');
+        setError('Login error: Incorrect username or password');
       }
     } catch (error) {
-      setError('Error de login: No se pudo conectar al servidor');
+      setError('Login error: Could not connect to the server');
       console.error('Error:', error);
     }
   };
 
+  // Render the login form and handle form submission
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">

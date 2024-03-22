@@ -8,6 +8,12 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.min.js'
 import 'bootstrap/dist/css/bootstrap.css';
 
+/**
+ * The main App component handles routing using React Router.
+ * It renders different components based on the URL path and authoritaton status.
+ * 
+ * @returns The root component of the application, which contains routing logic.
+ */
 const App = () => {
   return (
     <div className='Capstone-Project'>
@@ -25,8 +31,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
-
-
