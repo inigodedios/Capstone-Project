@@ -78,7 +78,7 @@ const Login = () => {
                 </div>
               </form>
               <div className="mt-3 text-center">
-                <p>¿No tienes una cuenta? <button className="btn btn-link" onClick={() => navigate('/signup')}>Regístrate aquí</button></p>
+                <p>Don't have an account? <button className="btn btn-link" onClick={() => navigate('/signup')}>Register here</button></p>
               </div>
             </div>
           </div>

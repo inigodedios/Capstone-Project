@@ -54,9 +54,9 @@ const StockDetails = ({ symbol }) => {
   if (!details) return <div>No details available for {symbol}.</div>;
 
   return (
-    <div>
-      <h2>Stock Details for {symbol}</h2>
-      <table>
+    <div className="container mt-4">
+      <h2 className="mb-4">Stock Details for {symbol}</h2>
+      <table className="table">
         <thead>
           <tr>
             <th>Date</th>
@@ -80,9 +80,7 @@ const StockDetails = ({ symbol }) => {
           ))}
         </tbody>
       </table>
-      {details && details.length > 0 && (
-        <StockChart details={details} />
-      )}
+      <StockChart details={details} />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// SignUpForm.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -35,32 +34,46 @@ const SignUpForm = () => {
   };
 
   return (
-    <div>
-      <h2>Sign Up</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSignUp}>
-        <div>
-          <label htmlFor="signup-username">Username:</label>
-          <input
-            id="signup-username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header">
+              <h2 className="text-center">Sign Up</h2>
+            </div>
+            <div className="card-body">
+              {error && <p className="text-danger">{error}</p>}
+              <form onSubmit={handleSignUp}>
+                <div className="mb-3">
+                  <label htmlFor="signup-username" className="form-label">Username:</label>
+                  <input
+                    id="signup-username"
+                    type="text"
+                    className="form-control"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="signup-password" className="form-label">Password:</label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    className="form-control"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="text-center">
+                  <button type="submit" className="btn btn-primary">Sign Up</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <div>
-          <label htmlFor="signup-password">Password:</label>
-          <input
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Sign Up</button>
-      </form>
+      </div>
     </div>
   );
 };

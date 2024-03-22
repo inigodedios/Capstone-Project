@@ -3,6 +3,8 @@ import StockItem from './components/StockItem'; // Asegúrate de que la ruta sea
 import StockDetails from './components/StockDetails'; // Asegúrate de que la ruta sea correcta
 import StockModificationForm from './components/StockModificationForm';
 import LogoutButton from './components/Logout';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const UserProfile = () => {
   const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
@@ -73,7 +75,6 @@ const handleModify = async (symbol, quantity, operation) => {
   }
 };
 
-
   const fetchStockDetails = async (symbol) => {
     if (stockDetails[symbol]) {
       setSelectedStock(symbol);
@@ -101,6 +102,34 @@ const handleModify = async (symbol, quantity, operation) => {
     setIsDetailsVisible(true);
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    if (!isDetailsVisible) {
+      // Si solo se está mostrando la lista de stocks
+      const tableData = portfolio.stocks.map(stock => [stock.symbol, stock.quantity, `$${stock.value.toFixed(2)}`]);
+      doc.autoTable({
+        head: [['Symbol', 'Quantity', 'Value']],
+        body: tableData,
+      });
+      doc.save('portfolio.pdf');
+    } else {
+      // Si se está mostrando la tabla y la gráfica después de hacer clic en un stock
+      if (selectedStock && stockDetails[selectedStock]) {
+        const symbol = selectedStock;
+        const details = stockDetails[symbol];
+        // Agregar lógica para generar la tabla y la gráfica con los detalles del stock
+        doc.text(`Stock: ${symbol}`, 10, 10);
+        doc.text(`Quantity: ${details.quantity}`, 10, 20);
+        doc.text(`Value: ${details.value}`, 10, 30);
+        // Puedes continuar agregando más detalles al PDF según sea necesario
+        doc.save(`${symbol}_details.pdf`);
+      } else {
+        // Esperar a que los detalles se carguen y luego generar el PDF
+        setTimeout(generatePDF, 500); // Intenta nuevamente después de 500 milisegundos
+      }
+    }
+  };
+  
 
   const gridLayoutStyle = {
     display: 'grid',
@@ -133,18 +162,23 @@ const handleModify = async (symbol, quantity, operation) => {
 
   return (
     <div style={gridLayoutStyle}>
-      <div style={headerStyle}>
+      <div style={headerStyle} className="bg-primary text-white p-3">
         <div>
-          <h1>DEBUGGING DOLLARS</h1>
-          <h2>PORTFOLIO OVERVIEW</h2>
-          {loading ? null : (
-            <p>Total portfolio value: ${portfolio.total_value.toFixed(2)}</p>
-          )}
+          <h1 className="mb-0">DEBUGGING DOLLARS</h1>
+          <h2 className="mb-0">PORTFOLIO OVERVIEW</h2>
         </div>
         <LogoutButton />
+        <div>
+        {/* Resto del contenido del componente UserProfile */}
+        <button onClick={generatePDF}>Save as PDF</button>
+    </div>
       </div>
-
       <div style={mainStyle}>
+        {loading ? null : (
+          <p className="mb-0">
+            <strong>Total portfolio value: ${portfolio.total_value.toFixed(2)}</strong>
+          </p>
+        )}
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -169,7 +203,7 @@ const handleModify = async (symbol, quantity, operation) => {
           </>
         )}
       </div>
-
+  
       {isDetailsVisible && selectedStock && stockDetails[selectedStock] && (
         <div style={detailsStyle}>
           <StockDetails symbol={selectedStock} details={stockDetails[selectedStock]} />
@@ -177,7 +211,8 @@ const handleModify = async (symbol, quantity, operation) => {
       )}
     </div>
   );
-};
 
+
+}
 
 export default UserProfile;
