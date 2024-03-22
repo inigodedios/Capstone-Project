@@ -1,12 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * The SignUpForm component renders a form for user registration.
+ * It allows users to sign up by providing a username and password.
+ * 
+ * @returns The SignUpForm component containing the registration form.
+ */
 const SignUpForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  /**
+   * Handles the sign-up form submission event.
+   * It sends a POST request with the username and password
+   * to the server for user registration. Upon success,
+   * it stores the authentication status and user ID
+   * in localStorage and navigates to the home page.
+   * 
+   * @param {Object} e - The event object associated with the form submission.
+   */
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
@@ -16,9 +31,9 @@ const SignUpForm = () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         console.log('Signed up successfully:', data.message);
         localStorage.setItem('isAuthenticated', 'true');
@@ -32,7 +47,8 @@ const SignUpForm = () => {
       console.error('Error:', error);
     }
   };
-
+  
+  // Render the sign-up form and handle form submission
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">

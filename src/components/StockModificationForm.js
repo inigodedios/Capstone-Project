@@ -29,7 +29,7 @@ const StockModificationForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     const quantityNum = parseInt(quantity, 10);
-     // Validates the inputs: checks if stockSymbol is filled and quantity is a positive number.
+    // Validates the inputs: checks if stockSymbol is filled and quantity is a positive number.
     if (!stockSymbol || isNaN(quantityNum) || quantityNum <= 0) {
       alert("Please enter a valid stock symbol and quantity.");
       return;

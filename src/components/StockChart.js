@@ -25,7 +25,7 @@ const StockChart = ({ details }) => {
       {
         label: 'Open',
         data: details.map(detail => detail.open),
-        borderColor: 'rgb(38, 150, 228)', 
+        borderColor: 'rgb(38, 150, 228)',
         backgroundColor: 'rgba(38, 150, 228, 0.5)',
         borderWidth: 2,
       },
@@ -46,7 +46,7 @@ const StockChart = ({ details }) => {
       {
         label: 'Close',
         data: details.map(detail => detail.close),
-        borderColor: 'rgb(255, 99, 132)', 
+        borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
         borderWidth: 2,
       }
@@ -76,18 +76,18 @@ const StockChart = ({ details }) => {
     }
   };
 
-    // Returns the JSX for rendering the chart within a card component
-    return (
-      <div className="container mt-4" id="chart"> {/* Aquí se añade el ID */}
-        <div className="card">
-          <div className="card-body">
-            <h5 className="card-title">Stock Price Evolution</h5>
-            <Line data={chartData} options={options} />
-          </div>
+  // Returns the JSX for rendering the chart within a card component
+  return (
+    <div className="container mt-4" id="chart"> {/* Aquí se añade el ID */}
+      <div className="card">
+        <div className="card-body">
+          <h5 className="card-title">Stock Price Evolution</h5>
+          <Line data={chartData} options={options} />
         </div>
       </div>
-    );
-  };
-  
+    </div>
+  );
+};
+
 
 export default StockChart;

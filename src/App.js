@@ -17,15 +17,15 @@ import 'bootstrap/dist/css/bootstrap.css';
 const App = () => {
   return (
     <div className='Capstone-Project'>
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUpForm />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<UserProfile />} />
-        </Route>
-      </Routes>
-    </Router>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUpForm />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<UserProfile />} />
+          </Route>
+        </Routes>
+      </Router>
     </div>
   );
 };

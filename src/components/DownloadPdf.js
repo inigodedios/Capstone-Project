@@ -20,7 +20,7 @@ const DownloadPdf = ({ portfolio, stockDetails, selectedStock }) => {
       return; // Stop the function execution if no stock is selected
     }
     const doc = new jsPDF();
-    
+
     // Set the font and size for the PDF to ensure a professional appearance
     doc.setFont("helvetica");
     doc.setFontSize(10);
@@ -29,13 +29,13 @@ const DownloadPdf = ({ portfolio, stockDetails, selectedStock }) => {
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
-    doc.text(`Date: ${currentDate}`, 150, 10); 
+    doc.text(`Date: ${currentDate}`, 150, 10);
 
     // Add a title to the PDF, centered on the page.
     doc.setFontSize(16);
     doc.text("Portfolio Summary", 105, 20, null, null, "center");
 
-     // If a stock is selected, include its name, quantity, and total value in the PDF
+    // If a stock is selected, include its name, quantity, and total value in the PDF
     if (selectedStock) {
       const stock = portfolio.stocks.find(s => s.symbol === selectedStock);
       if (stock) {
@@ -84,7 +84,7 @@ const DownloadPdf = ({ portfolio, stockDetails, selectedStock }) => {
   // Render a button that triggers the PDF generation when clicked.
   return (
     <button onClick={generatePDF} style={{ marginTop: '20px', fontSize: '16px', padding: '10px 20px', cursor: 'pointer', backgroundColor: '#3498db', color: '#ffffff', border: 'none', borderRadius: '5px' }}>
-     Download item in PDF
+      Download item in PDF
     </button>
   );
 };

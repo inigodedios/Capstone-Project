@@ -34,7 +34,7 @@ const StockDetails = ({ symbol }) => {
           throw new Error(`Failed to fetch details for symbol: ${symbol}`);
         }
         const data = await response.json();
-  
+
         const stockDetails = data
           .map(([date, details]) => ({
             date,
@@ -52,10 +52,10 @@ const StockDetails = ({ symbol }) => {
         setLoading(false);
       }
     };
-  
+
     fetchStockDetails();
   }, [symbol]);
-  
+
   // Conditional rendering based on loading state and presence of data
   if (loading) return <div>Loading stock details...</div>;
   if (error) return <div>Error fetching stock details: {error}</div>;
