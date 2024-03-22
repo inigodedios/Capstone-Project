@@ -5,6 +5,8 @@ import StockModificationForm from './components/StockModificationForm';
 import LogoutButton from './components/Logout';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import DownloadPdf from './components/DownloadPdf'; // Asegúrate de que la ruta sea correcta
+
 
 const UserProfile = () => {
   const [portfolio, setPortfolio] = useState({ total_value: 0, stocks: [] });
@@ -102,7 +104,7 @@ const handleModify = async (symbol, quantity, operation) => {
     setIsDetailsVisible(true);
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     const doc = new jsPDF();
     if (!isDetailsVisible) {
       // Si solo se está mostrando la lista de stocks
@@ -125,10 +127,12 @@ const handleModify = async (symbol, quantity, operation) => {
         doc.save(`${symbol}_details.pdf`);
       } else {
         // Esperar a que los detalles se carguen y luego generar el PDF
-        setTimeout(generatePDF, 500); // Intenta nuevamente después de 500 milisegundos
+        await new Promise(resolve => setTimeout(resolve, 500)); // Esperar 500 milisegundos
+        generatePDF(); // Llamar a la función de generación de PDF nuevamente
       }
     }
   };
+  
   
 
   const gridLayoutStyle = {
@@ -141,7 +145,7 @@ const handleModify = async (symbol, quantity, operation) => {
     `,
     gap: '20px',
     margin: '20px',
-    height: '100vh', // Ajusta el alto al de la ventana del navegador
+    height: '100vh',
   };
 
   const headerStyle = {
@@ -162,17 +166,21 @@ const handleModify = async (symbol, quantity, operation) => {
 
   return (
     <div style={gridLayoutStyle}>
-      <div style={headerStyle} className="bg-primary text-white p-3">
-        <div>
-          <h1 className="mb-0">DEBUGGING DOLLARS</h1>
-          <h2 className="mb-0">PORTFOLIO OVERVIEW</h2>
+        <div style={headerStyle} className="bg-primary text-white p-3">
+            <div>
+                <h1 className="mb-0">DEBUGGING DOLLARS</h1>
+                <h2 className="mb-0">PORTFOLIO OVERVIEW</h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}> {/* Ajuste para los botones */}
+                {/* Los botones ahora están dentro de un div con display flex y un gap */}
+                <DownloadPdf
+                    portfolio={portfolio}
+                    stockDetails={stockDetails}
+                    selectedStock={selectedStock}
+                />
+                <LogoutButton />
+            </div>
         </div>
-        <LogoutButton />
-        <div>
-        {/* Resto del contenido del componente UserProfile */}
-        <button onClick={generatePDF}>Save as PDF</button>
-    </div>
-      </div>
       <div style={mainStyle}>
         {loading ? null : (
           <p className="mb-0">

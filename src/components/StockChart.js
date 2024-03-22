@@ -62,16 +62,18 @@ const StockChart = ({ details }) => {
     }
   };
 
-  return (
-    <div className="container mt-4">
-      <div className="card">
-        <div className="card-body">
-          <h5 className="card-title">Stock Price Evolution</h5>
-          <Line data={chartData} options={options} />
+    
+    return (
+      <div className="container mt-4" id="chart"> {/* Aquí se añade el ID */}
+        <div className="card">
+          <div className="card-body">
+            <h5 className="card-title">Stock Price Evolution</h5>
+            <Line data={chartData} options={options} />
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+  
 
 export default StockChart;
